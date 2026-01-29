@@ -46,3 +46,7 @@ drizzle/meta
 # IDEs
 .idea
 .vscode
+
+# Playwright
+playwright-report/
+test-results/

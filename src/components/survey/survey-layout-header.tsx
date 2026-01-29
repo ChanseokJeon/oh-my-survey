@@ -57,6 +57,7 @@ export function SurveyLayoutHeader({ survey, activeTab }: SurveyLayoutHeaderProp
               <Link
                 key={tab.key}
                 href={tab.href(survey.id)}
+                data-testid={`survey-tab-${tab.key}`}
                 className={cn(
                   'relative pb-3 px-1 text-sm font-medium transition-colors',
                   isActive

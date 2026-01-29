@@ -2,10 +2,8 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,8 +24,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push("/");
-        router.refresh();
+        // Use window.location for full page reload to ensure session is properly detected
+        window.location.href = "/";
       }
     } catch {
       setError("An error occurred. Please try again.");

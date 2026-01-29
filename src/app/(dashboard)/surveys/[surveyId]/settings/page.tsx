@@ -1,77 +1,47 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeProvider, useSurveyTheme } from "@/components/providers/theme-provider";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Trash2, Upload, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useSurvey } from "@/contexts/survey-context";
+import { Loader2, Trash2, Upload, ExternalLink, Wand2 } from "lucide-react";
+import { SheetsSetupWizard } from "@/components/survey/sheets-setup-wizard";
 
-interface Survey {
-  id: string;
-  title: string;
-  slug: string;
-  status: "draft" | "published" | "closed";
-  theme: "light" | "dark" | "minimal";
-  logoBase64: string | null;
-  sheetsConfig: { spreadsheetId: string; sheetName: string } | null;
-}
-
-export default function SettingsPage({
-  params,
-}: {
-  params: Promise<{ surveyId: string }>;
-}) {
-  const { surveyId } = use(params);
-  const [survey, setSurvey] = useState<Survey | null>(null);
+export default function SettingsPage() {
+  const { survey, refreshSurvey } = useSurvey();
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState<"light" | "dark" | "minimal">("light");
   const [logo, setLogo] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [sheetName, setSheetName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSurvey();
-  }, [surveyId]);
-
-  async function fetchSurvey() {
-    try {
-      const response = await fetch(`/api/surveys/${surveyId}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
-      setSurvey(data);
-      setTitle(data.title);
-      setTheme(data.theme);
-      setLogo(data.logoBase64);
-      setSpreadsheetId(data.sheetsConfig?.spreadsheetId || "");
-      setSheetName(data.sheetsConfig?.sheetName || "");
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to load survey",
-        variant: "destructive",
-      });
-      router.push("/");
-    } finally {
-      setLoading(false);
+    if (survey) {
+      setTitle(survey.title);
+      setTheme(survey.theme as "light" | "dark" | "minimal");
+      setLogo(survey.logoBase64);
+      setSpreadsheetId((survey.sheetsConfig as any)?.spreadsheetId || "");
+      setSheetName((survey.sheetsConfig as any)?.sheetName || "");
     }
-  }
+  }, [survey]);
 
   async function handleSave() {
+    if (!survey) return;
+
     setSaving(true);
     try {
-      const response = await fetch(`/api/surveys/${surveyId}`, {
+      const response = await fetch(`/api/surveys/${survey.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,7 +56,7 @@ export default function SettingsPage({
 
       if (!response.ok) throw new Error("Failed to save");
       toast({ title: "Settings saved" });
-      fetchSurvey();
+      await refreshSurvey();
     } catch {
       toast({
         title: "Error",
@@ -99,9 +69,11 @@ export default function SettingsPage({
   }
 
   async function handlePublish(action: "publish" | "unpublish" | "close") {
+    if (!survey) return;
+
     setPublishing(true);
     try {
-      const response = await fetch(`/api/surveys/${surveyId}/publish`, {
+      const response = await fetch(`/api/surveys/${survey.id}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -112,7 +84,7 @@ export default function SettingsPage({
         throw new Error(data.error || "Failed");
       }
       toast({ title: `Survey ${action}ed` });
-      fetchSurvey();
+      await refreshSurvey();
     } catch (error) {
       toast({
         title: "Error",
@@ -125,13 +97,14 @@ export default function SettingsPage({
   }
 
   async function handleDelete() {
+    if (!survey) return;
     if (!confirm("Are you sure you want to delete this survey? This cannot be undone.")) {
       return;
     }
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/surveys/${surveyId}`, {
+      const response = await fetch(`/api/surveys/${survey.id}`, {
         method: "DELETE",
       });
 
@@ -169,29 +142,10 @@ export default function SettingsPage({
     reader.readAsDataURL(file);
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (!survey) return null;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">Survey Settings</h1>
-          <p className="text-muted-foreground">{survey?.title}</p>
-        </div>
-        <Badge>{survey?.status}</Badge>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>General</CardTitle>
@@ -255,6 +209,26 @@ export default function SettingsPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button
+            variant="outline"
+            onClick={() => setWizardOpen(true)}
+            className="w-full"
+          >
+            <Wand2 className="mr-2 h-4 w-4" />
+            Setup with Wizard
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or enter manually
+              </span>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="spreadsheetId">Spreadsheet ID</Label>
             <Input
@@ -278,6 +252,18 @@ export default function SettingsPage({
           </div>
         </CardContent>
       </Card>
+
+      <SheetsSetupWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        surveyId={survey?.id || ""}
+        onComplete={(config) => {
+          setSpreadsheetId(config.spreadsheetId);
+          setSheetName(config.sheetName);
+          setWizardOpen(false);
+          toast({ title: "Sheets configuration updated" });
+        }}
+      />
 
       <Card>
         <CardHeader>

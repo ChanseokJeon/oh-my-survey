@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,14 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, FileSpreadsheet, Loader2 } from "lucide-react";
-
-interface Question {
-  id: string;
-  type: string;
-  title: string;
-  order: number;
-}
+import { useSurvey } from "@/contexts/survey-context";
+import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 
 interface Response {
   id: string;
@@ -36,19 +28,8 @@ interface Response {
   ipAddress: string | null;
 }
 
-interface Survey {
-  id: string;
-  title: string;
-  questions: Question[];
-}
-
-export default function ResponsesPage({
-  params,
-}: {
-  params: Promise<{ surveyId: string }>;
-}) {
-  const { surveyId } = use(params);
-  const [survey, setSurvey] = useState<Survey | null>(null);
+export default function ResponsesPage() {
+  const { survey, questions } = useSurvey();
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -56,52 +37,48 @@ export default function ResponsesPage({
   const [selectedResponse, setSelectedResponse] = useState<Response | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchData();
-  }, [surveyId, page]);
+    if (survey) {
+      fetchResponses();
+    }
+  }, [survey, page]);
 
-  async function fetchData() {
+  async function fetchResponses() {
+    if (!survey) return;
+
     try {
-      const [surveyRes, responsesRes] = await Promise.all([
-        fetch(`/api/surveys/${surveyId}`),
-        fetch(`/api/surveys/${surveyId}/responses?page=${page}&limit=20`),
-      ]);
-
-      if (!surveyRes.ok) throw new Error("Failed to fetch survey");
+      const responsesRes = await fetch(`/api/surveys/${survey.id}/responses?page=${page}&limit=20`);
       if (!responsesRes.ok) throw new Error("Failed to fetch responses");
 
-      const surveyData = await surveyRes.json();
       const responsesData = await responsesRes.json();
-
-      setSurvey(surveyData);
       setResponses(responsesData.responses);
       setTotalPages(responsesData.pagination.totalPages);
     } catch {
       toast({
         title: "Error",
-        description: "Failed to load data",
+        description: "Failed to load responses",
         variant: "destructive",
       });
-      router.push("/");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleExport() {
+    if (!survey) return;
+
     setExporting(true);
     try {
-      const response = await fetch(`/api/surveys/${surveyId}/responses/export`);
+      const response = await fetch(`/api/surveys/${survey.id}/responses/export`);
       if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `responses-${surveyId}.csv`;
+      a.download = `responses-${survey.id}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
       toast({ title: "Export complete" });
@@ -117,9 +94,11 @@ export default function ResponsesPage({
   }
 
   async function handleSyncSheets() {
+    if (!survey) return;
+
     setSyncing(true);
     try {
-      const response = await fetch(`/api/surveys/${surveyId}/sync-sheets`, {
+      const response = await fetch(`/api/surveys/${survey.id}/sync-sheets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -153,7 +132,7 @@ export default function ResponsesPage({
     return answer;
   }
 
-  if (loading) {
+  if (!survey || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -163,38 +142,23 @@ export default function ResponsesPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{survey?.title}</h1>
-            <p className="text-muted-foreground">
-              {responses.length > 0 ? `${responses.length} responses` : "No responses yet"}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={exporting || responses.length === 0}>
-            {exporting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-2 h-4 w-4" />
-            )}
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={handleSyncSheets} disabled={syncing || responses.length === 0}>
-            {syncing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-            )}
-            Sync to Sheets
-          </Button>
-        </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={handleExport} disabled={exporting || responses.length === 0}>
+          {exporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          Export CSV
+        </Button>
+        <Button variant="outline" onClick={handleSyncSheets} disabled={syncing || responses.length === 0}>
+          {syncing ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+          )}
+          Sync to Sheets
+        </Button>
       </div>
 
       {responses.length === 0 ? (
@@ -269,12 +233,12 @@ export default function ResponsesPage({
           <DialogHeader>
             <DialogTitle>Response Details</DialogTitle>
           </DialogHeader>
-          {selectedResponse && survey && (
+          {selectedResponse && (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
                 Submitted: {new Date(selectedResponse.completedAt).toLocaleString()}
               </div>
-              {survey.questions.map((question) => (
+              {questions.map((question) => (
                 <div key={question.id} className="border-b pb-4">
                   <p className="font-medium mb-1">{question.title}</p>
                   <p className="text-muted-foreground">

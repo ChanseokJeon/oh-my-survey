@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { QuestionList } from "@/components/builder/question-list";
 import { QuestionTypePicker } from "@/components/builder/question-type-picker";
 import { QuestionEditor } from "@/components/builder/question-editor";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Loader2, ArrowLeft, Eye } from "lucide-react";
-import Link from "next/link";
+import { useSurvey } from "@/contexts/survey-context";
+import { Plus } from "lucide-react";
 
 interface Question {
   id: string;
@@ -19,53 +18,25 @@ interface Question {
   order: number;
 }
 
-interface Survey {
-  id: string;
-  title: string;
-  slug: string;
-  status: string;
-}
-
-export default function EditSurveyPage({
-  params,
-}: {
-  params: Promise<{ surveyId: string }>;
-}) {
-  const { surveyId } = use(params);
-  const [survey, setSurvey] = useState<Survey | null>(null);
+export default function EditSurveyPage() {
+  const { survey, questions: contextQuestions, refreshSurvey } = useSurvey();
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const router = useRouter();
   const { toast } = useToast();
 
+  // Sync questions with context
   useEffect(() => {
-    fetchSurvey();
-  }, [surveyId]);
-
-  async function fetchSurvey() {
-    try {
-      const response = await fetch(`/api/surveys/${surveyId}`);
-      if (!response.ok) throw new Error("Failed to fetch survey");
-      const data = await response.json();
-      setSurvey(data);
-      setQuestions(data.questions || []);
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to load survey",
-        variant: "destructive",
-      });
-      router.push("/");
-    } finally {
-      setLoading(false);
+    if (contextQuestions.length > 0) {
+      setQuestions(contextQuestions as Question[]);
     }
-  }
+  }, [contextQuestions]);
 
   async function handleAddQuestion(type: Question["type"]) {
+    if (!survey) return;
+
     try {
-      const response = await fetch(`/api/surveys/${surveyId}/questions`, {
+      const response = await fetch(`/api/surveys/${survey.id}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,6 +62,8 @@ export default function EditSurveyPage({
   }
 
   async function handleReorder(questionIds: string[]) {
+    if (!survey) return;
+
     const previousQuestions = [...questions];
     // Optimistic update
     const reordered = questionIds.map((id, index) => ({
@@ -100,7 +73,7 @@ export default function EditSurveyPage({
     setQuestions(reordered);
 
     try {
-      const response = await fetch(`/api/surveys/${surveyId}/questions/reorder`, {
+      const response = await fetch(`/api/surveys/${survey.id}/questions/reorder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionIds }),
@@ -118,11 +91,11 @@ export default function EditSurveyPage({
   }
 
   async function handleEditQuestion(updates: Partial<Question>) {
-    if (!editingQuestion) return;
+    if (!editingQuestion || !survey) return;
 
     try {
       const response = await fetch(
-        `/api/surveys/${surveyId}/questions/${editingQuestion.id}`,
+        `/api/surveys/${survey.id}/questions/${editingQuestion.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -145,10 +118,11 @@ export default function EditSurveyPage({
 
   async function handleDeleteQuestion(id: string) {
     if (!confirm("Delete this question?")) return;
+    if (!survey) return;
 
     try {
       const response = await fetch(
-        `/api/surveys/${surveyId}/questions/${id}`,
+        `/api/surveys/${survey.id}/questions/${id}`,
         { method: "DELETE" }
       );
 
@@ -164,38 +138,8 @@ export default function EditSurveyPage({
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{survey?.title}</h1>
-            <p className="text-muted-foreground">Edit questions</p>
-          </div>
-        </div>
-        {survey?.status === "published" && (
-          <Button variant="outline" asChild>
-            <Link href={`/s/${survey.slug}`} target="_blank">
-              <Eye className="mr-2 h-4 w-4" />
-              Preview
-            </Link>
-          </Button>
-        )}
-      </div>
-
       {questions.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 border rounded-lg border-dashed">
           <p className="text-muted-foreground mb-4">No questions yet</p>

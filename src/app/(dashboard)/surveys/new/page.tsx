@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ThemeSelector } from "@/components/survey/theme-selector";
 import { ThemeProvider, useSurveyTheme } from "@/components/providers/theme-provider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { AIGeneratorDialog } from "@/components/survey/ai-generator";
 
 function ThemeSelectorWrapper({ onThemeChange }: { onThemeChange: (theme: "light" | "dark" | "minimal") => void }) {
   const { theme, setTheme } = useSurveyTheme();
@@ -33,6 +34,7 @@ export default function NewSurveyPage() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState<"light" | "dark" | "minimal">("light");
   const [loading, setLoading] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -107,9 +109,38 @@ export default function NewSurveyPage() {
                 Create Survey
               </Button>
             </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setAiDialogOpen(true)}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate with AI
+            </Button>
           </form>
         </CardContent>
       </Card>
+
+      <AIGeneratorDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onSurveyGenerated={(survey) => {
+          router.push(`/surveys/${survey.id}/edit`);
+        }}
+      />
     </div>
   );
 }

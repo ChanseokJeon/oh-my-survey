@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SurveyCard } from "@/components/survey/survey-card";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AIGeneratorDialog } from "@/components/survey/ai-generator";
 
 interface Survey {
   id: string;
@@ -21,7 +23,9 @@ interface Survey {
 export default function DashboardPage() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     fetchSurveys();
@@ -78,23 +82,35 @@ export default function DashboardPage() {
             Create and manage your surveys
           </p>
         </div>
-        <Button asChild>
-          <Link href="/surveys/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Survey
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setAiDialogOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
+          <Button asChild>
+            <Link href="/surveys/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Survey
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {surveys.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 border rounded-lg border-dashed">
           <p className="text-muted-foreground mb-4">No surveys yet</p>
-          <Button asChild>
-            <Link href="/surveys/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Create your first survey
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setAiDialogOpen(true)}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate with AI
+            </Button>
+            <Button asChild>
+              <Link href="/surveys/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Create your first survey
+              </Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -110,6 +126,14 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <AIGeneratorDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onSurveyGenerated={(survey) => {
+          router.push(`/surveys/${survey.id}/edit`);
+        }}
+      />
     </div>
   );
 }

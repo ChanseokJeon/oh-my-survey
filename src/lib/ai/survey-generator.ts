@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAnthropicClient } from "./client";
+import { getAnthropicClient, getOpenAIClient, getConfiguredProvider } from "./client";
 
 const SYSTEM_PROMPT = `You are an expert survey designer. Given a description of what the user wants to learn or measure, generate a comprehensive and well-structured survey.
 
@@ -43,9 +43,7 @@ export type QuestionType = z.infer<typeof QuestionSchema>["type"];
 export type GeneratedQuestion = z.infer<typeof QuestionSchema>;
 export type GeneratedSurvey = z.infer<typeof GeneratedSurveySchema>;
 
-export async function generateSurvey(
-  description: string
-): Promise<GeneratedSurvey> {
+async function generateWithAnthropic(description: string): Promise<string> {
   const client = getAnthropicClient();
 
   const response = await client.messages.create({
@@ -60,13 +58,59 @@ export async function generateSurvey(
     ],
   });
 
-  // Extract text content from response
   const content = response.content[0];
   if (content.type !== "text") {
     throw new Error("Unexpected response type from Claude");
   }
 
-  const rawText = content.text.trim();
+  return content.text.trim();
+}
+
+async function generateWithOpenAI(description: string): Promise<string> {
+  const client = getOpenAIClient();
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o",
+    max_tokens: 2048,
+    messages: [
+      {
+        role: "system",
+        content: SYSTEM_PROMPT,
+      },
+      {
+        role: "user",
+        content: `Generate a survey for: ${description}`,
+      },
+    ],
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("No response content from OpenAI");
+  }
+
+  return content.trim();
+}
+
+export async function generateSurvey(
+  description: string
+): Promise<GeneratedSurvey> {
+  const provider = getConfiguredProvider();
+
+  if (!provider) {
+    throw new Error(
+      "No AI provider configured. Please set either OPENAI_API_KEY or ANTHROPIC_API_KEY in your .env.local file."
+    );
+  }
+
+  let rawText: string;
+
+  if (provider === "openai") {
+    rawText = await generateWithOpenAI(description);
+  } else {
+    rawText = await generateWithAnthropic(description);
+  }
 
   // Parse JSON response
   let surveyData: unknown;
@@ -74,7 +118,7 @@ export async function generateSurvey(
     surveyData = JSON.parse(rawText);
   } catch (error) {
     throw new Error(
-      `Failed to parse Claude response as JSON: ${error instanceof Error ? error.message : "Unknown error"}`
+      `Failed to parse AI response as JSON: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 

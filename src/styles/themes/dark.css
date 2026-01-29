@@ -1,0 +1,13 @@
+/* Dark Theme - Professional dark mode */
+[data-survey-theme="dark"] {
+  --survey-bg: 222.2 84% 4.9%;
+  --survey-fg: 210 40% 98%;
+  --survey-primary: 217.2 91.2% 59.8%;
+  --survey-primary-fg: 222.2 47.4% 11.2%;
+  --survey-muted: 217.2 32.6% 17.5%;
+  --survey-muted-fg: 215 20.2% 65.1%;
+  --survey-border: 217.2 32.6% 17.5%;
+  --survey-input: 217.2 32.6% 17.5%;
+  --survey-card: 222.2 84% 4.9%;
+  --survey-card-fg: 210 40% 98%;
+}

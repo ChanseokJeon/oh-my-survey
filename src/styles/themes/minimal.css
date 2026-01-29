@@ -1,0 +1,13 @@
+/* Minimal Theme - Clean and simple */
+[data-survey-theme="minimal"] {
+  --survey-bg: 0 0% 98%;
+  --survey-fg: 0 0% 20%;
+  --survey-primary: 0 0% 20%;
+  --survey-primary-fg: 0 0% 98%;
+  --survey-muted: 0 0% 93%;
+  --survey-muted-fg: 0 0% 45%;
+  --survey-border: 0 0% 88%;
+  --survey-input: 0 0% 100%;
+  --survey-card: 0 0% 100%;
+  --survey-card-fg: 0 0% 20%;
+}

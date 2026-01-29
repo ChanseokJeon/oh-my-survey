@@ -1,0 +1,13 @@
+/* Light Theme - Default clean look */
+[data-survey-theme="light"] {
+  --survey-bg: 0 0% 100%;
+  --survey-fg: 222.2 84% 4.9%;
+  --survey-primary: 221.2 83.2% 53.3%;
+  --survey-primary-fg: 210 40% 98%;
+  --survey-muted: 210 40% 96.1%;
+  --survey-muted-fg: 215.4 16.3% 46.9%;
+  --survey-border: 214.3 31.8% 91.4%;
+  --survey-input: 214.3 31.8% 91.4%;
+  --survey-card: 0 0% 100%;
+  --survey-card-fg: 222.2 84% 4.9%;
+}

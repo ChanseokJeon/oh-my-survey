@@ -1,0 +1,456 @@
+{
+  "timestamp": "20260130_084437",
+  "summary": {
+    "total": 8,
+    "success": 5,
+    "errors": 3,
+    "avgDurationMs": 7410
+  },
+  "results": [
+    {
+      "id": "inference-1",
+      "type": "inference",
+      "description": "LLM이 주제만 보고 추론하여 질문 생성",
+      "input": "Customer feedback survey for a coffee shop",
+      "status": "SUCCESS",
+      "durationMs": 6098,
+      "result": {
+        "title": "Coffee Shop Customer Feedback Survey",
+        "questionCount": 10,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "short_text",
+            "title": "What is your name?",
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How often do you visit our coffee shop?",
+            "options": [
+              "Daily",
+              "Weekly",
+              "Monthly",
+              "Rarely"
+            ],
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "What time of day do you usually visit?",
+            "options": [
+              "Morning",
+              "Afternoon",
+              "Evening"
+            ],
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "What is your favorite type of coffee?",
+            "options": [
+              "Espresso",
+              "Latte",
+              "Cappuccino",
+              "Americano",
+              "Mocha",
+              "Other"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the quality of our coffee?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the friendliness of our staff?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the cleanliness of our shop?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "Have you tried any of our pastries?",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Would you recommend our coffee shop to others?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "What improvements would you suggest for our coffee shop?",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-15"
+      }
+    },
+    {
+      "id": "inference-2",
+      "type": "inference",
+      "description": "LLM이 이벤트 주제로 추론하여 질문 생성",
+      "input": "Post-event satisfaction survey for a tech conference",
+      "status": "SUCCESS",
+      "durationMs": 14347,
+      "result": {
+        "title": "Post-Event Satisfaction Survey for Tech Conference 2023",
+        "questionCount": 15,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "short_text",
+            "title": "What is your name?",
+            "required": false
+          },
+          {
+            "type": "short_text",
+            "title": "What is your email address?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate your overall experience at the conference?",
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Did the conference meet your expectations?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "What was your primary reason for attending the conference?",
+            "options": [
+              "Networking",
+              "Learning new skills",
+              "Hearing from speakers",
+              "Exploring products",
+              "Other"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How likely are you to recommend this conference to a colleague or friend?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "Which session format did you find most engaging?",
+            "options": [
+              "Keynotes",
+              "Workshops",
+              "Panel discussions",
+              "Networking sessions",
+              "Product demos"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the quality of the speakers at the conference?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "What was the highlight of the conference for you?",
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How was the venue for the conference?",
+            "options": [
+              "Excellent",
+              "Good",
+              "Average",
+              "Below Average",
+              "Poor"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the registration process?",
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Did you encounter any issues during the conference?",
+            "required": false
+          },
+          {
+            "type": "long_text",
+            "title": "If you encountered issues, please describe them.",
+            "required": false
+          },
+          {
+            "type": "long_text",
+            "title": "What improvements would you suggest for future conferences?",
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "Would you be interested in attending future conferences organized by us?",
+            "required": true
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-15"
+      }
+    },
+    {
+      "id": "structured-1",
+      "type": "structured",
+      "description": "구체적 요구사항을 정리하여 질문 생성",
+      "input": "직원 만족도 조사를 만들어줘. 다음 항목을 포함해야 해: 1) 급여 만족도 2) 워라밸 3) 팀 분위기 4) 성장 기회 5) 복지 혜택. 각 항목은 1-5점 척도로 평가하고, 마지막에 자유 의견란 추가해줘.",
+      "status": "SUCCESS",
+      "durationMs": 5406,
+      "result": {
+        "title": "직원 만족도 조사",
+        "questionCount": 6,
+        "types": [
+          "long_text",
+          "rating"
+        ],
+        "questions": [
+          {
+            "type": "rating",
+            "title": "귀하는 현재 급여에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "귀하의 워라밸(Work-Life Balance)에 대해 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "귀하의 팀 분위기에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "귀하는 회사에서 제공하는 성장 기회에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "귀하의 복지 혜택에 대해 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "직장에서의 전반적인 경험 또는 개선 사항에 대한 자유로운 의견이 있으시면 작성해 주세요.",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "6-10"
+      }
+    },
+    {
+      "id": "structured-2",
+      "type": "structured",
+      "description": "명시된 질문을 기반으로 설문 생성",
+      "input": "Create a product feedback survey with these exact questions: 1. How did you hear about us? (options: Social media, Friend, Google, Advertisement) 2. Rate the product quality 1-5 3. Would you recommend to others? Yes/No 4. Any suggestions for improvement?",
+      "status": "SUCCESS",
+      "durationMs": 2523,
+      "result": {
+        "title": "Product Feedback Survey",
+        "questionCount": 4,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "multiple_choice",
+            "title": "How did you hear about us?",
+            "options": [
+              "Social media",
+              "Friend",
+              "Google",
+              "Advertisement"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "Rate the product quality",
+            "options": [],
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Would you recommend to others?",
+            "options": [],
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "Any suggestions for improvement?",
+            "options": [],
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "4-6"
+      }
+    },
+    {
+      "id": "mixed-1",
+      "type": "mixed",
+      "description": "일부 명시 + 나머지 추론",
+      "input": "온라인 쇼핑몰 고객 설문을 만들어줘. 배송 속도와 포장 상태는 반드시 물어봐야 하고, 나머지는 적절히 추가해줘.",
+      "status": "SUCCESS",
+      "durationMs": 8680,
+      "result": {
+        "title": "온라인 쇼핑몰 고객 만족도 조사",
+        "questionCount": 11,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "short_text",
+            "title": "사용하신 온라인 쇼핑몰의 이름은 무엇인가요?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "상품을 찾는 과정은 얼마나 쉬웠나요?",
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "가장 많이 이용하는 결제 방법을 선택해주세요",
+            "options": [
+              "신용카드",
+              "체크카드",
+              "계좌이체",
+              "휴대폰 결제",
+              "기타"
+            ],
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "상품 설명이 충분히 상세했나요?",
+            "required": false
+          },
+          {
+            "type": "rating",
+            "title": "배송 속도에 대한 만족도를 평가해주세요.",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "제품의 포장 상태에 대한 만족도를 평가해주세요.",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "상품을 받고 난 후 느낀 장점과 단점을 말씀해주세요.",
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "상품을 반환하거나 교환한 적이 있습니까?",
+            "required": false
+          },
+          {
+            "type": "rating",
+            "title": "고객 서비스의 전반적인 만족도를 평가해주세요.",
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "온라인 쇼핑 경험을 개선할 수 있는 항목을 선택해주세요",
+            "options": [
+              "더 빠른 배송",
+              "더 나은 품질",
+              "더 낮은 가격",
+              "더 쉬운 반품 절차",
+              "기타"
+            ],
+            "required": false
+          },
+          {
+            "type": "short_text",
+            "title": "온라인 쇼핑몰을 다른 사람에게 추천하시겠습니까? 이유와 함께 대답해주세요.",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-12"
+      }
+    },
+    {
+      "id": "summarize-1",
+      "type": "summarize",
+      "description": "회의록을 요약하여 후속 피드백 설문 생성",
+      "input": "다음 회의록을 기반으로 팀원들에게 피드백을 받을 수 있는 설문을 만들어줘:\n\n[2024년 1분기 프로젝트 회고 회의록]\n참석자: 김팀장, 이개발, 박디자인, 최기획\n\n1. 프로젝트 일정 관련\n- 초기 일정이 너무 촉박했다는 의견 다수\n- 중간에 요구사항 변경이 3번 있었음\n- QA 기간이 부족해서 버그가 많이 발생\n\n2. 커뮤니케이션 이슈\n- 기획팀과 개발팀 간 소통이 원활하지 않았음\n- 디자인 시안 전달이 늦어져서 개발 일정에 영향\n- 주간 회의가 너무 길다는 피드백\n\n3. 기술적 이슈\n- 신규 프레임워크 도입으로 러닝커브 발생\n- 코드 리뷰 프로세스가 없어서 품질 이슈\n- 테스트 자동화가 안되어 있음\n\n4. 잘된 점\n- 팀워크는 전반적으로 좋았음\n- 야근 없이 마무리\n- 고객 만족도는 높았음\n\n액션 아이템: 다음 프로젝트 전에 개선점 파악 필요",
+      "status": "ERROR",
+      "error": "An unexpected error occurred while generating the survey.",
+      "durationMs": 250
+    },
+    {
+      "id": "summarize-2",
+      "type": "summarize",
+      "description": "고객 불만 목록을 분석하여 만족도 조사 생성",
+      "input": "아래 고객 불만 사항들을 분석해서 서비스 개선을 위한 고객 만족도 조사를 만들어줘:\n\n[최근 3개월 고객 불만 접수 내역]\n\n배송 관련 (45건):\n- 배송이 예상보다 2-3일 늦게 옴\n- 배송 추적이 안됨\n- 배송비가 너무 비쌈\n- 새벽배송 지역이 한정적\n\n상품 품질 (32건):\n- 사진과 실물이 다름\n- 포장이 부실해서 파손됨\n- 사이즈가 정확하지 않음\n- 교환/반품 절차가 복잡함\n\n고객센터 (28건):\n- 전화 연결이 안됨\n- 챗봇이 도움이 안됨\n- 답변이 너무 늦음\n- 환불 처리가 오래 걸림\n\n웹사이트/앱 (15건):\n- 결제 오류가 자주 발생\n- 앱이 자주 튕김\n- 검색이 정확하지 않음\n- 필터 기능이 부족함\n\n이 불만들을 해소하기 위해 고객들에게 우선순위를 파악할 수 있는 설문을 만들어줘.",
+      "status": "ERROR",
+      "error": "An unexpected error occurred while generating the survey.",
+      "durationMs": 126
+    },
+    {
+      "id": "summarize-3",
+      "type": "summarize",
+      "description": "제품 기획서를 기반으로 사용자 조사 설문 생성",
+      "input": "다음 제품 기획서를 보고 타겟 사용자들에게 니즈를 파악할 수 있는 설문을 만들어줘:\n\n[신규 서비스: 반려동물 건강관리 앱 '펫케어']\n\n1. 서비스 개요\n반려동물의 건강을 체계적으로 관리할 수 있는 모바일 앱. 예방접종 일정, 병원 예약, 식단 관리, 운동량 체크 등 통합 관리.\n\n2. 타겟 고객\n- 25-45세 반려동물 보호자\n- 강아지/고양이 위주\n- 반려동물을 가족처럼 생각하는 사람들\n\n3. 핵심 기능\n가) 건강 기록: 체중, 접종 기록, 병원 방문 이력\n나) 알림 서비스: 예방접종, 약 복용, 병원 예약\n다) 커뮤니티: 같은 품종 보호자들과 정보 공유\n라) 병원 연동: 주변 동물병원 찾기, 예약\n마) AI 상담: 간단한 증상 체크\n\n4. 예상 가격\n- 기본: 무료 (광고 포함)\n- 프리미엄: 월 4,900원 (광고 제거, AI 상담 무제한)\n\n5. 경쟁사 분석\n- A앱: 건강기록만 가능, UI 불편\n- B앱: 병원 예약만 특화\n- C앱: 커뮤니티 위주\n\n이 기획서를 바탕으로 실제 사용자들이 어떤 기능을 원하는지, 가격은 적절한지 등을 파악할 수 있는 설문을 만들어줘.",
+      "status": "ERROR",
+      "error": "An unexpected error occurred while generating the survey.",
+      "durationMs": 93
+    }
+  ]
+}

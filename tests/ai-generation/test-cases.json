@@ -1,0 +1,100 @@
+{
+  "testCases": [
+    {
+      "id": "inference-1",
+      "type": "inference",
+      "description": "LLM이 주제만 보고 추론하여 질문 생성",
+      "input": "Customer feedback survey for a coffee shop",
+      "expectedCriteria": {
+        "minQuestions": 5,
+        "maxQuestions": 15,
+        "requiredTypes": ["rating", "multiple_choice"],
+        "shouldIncludeTopics": ["quality", "service", "satisfaction"]
+      }
+    },
+    {
+      "id": "inference-2",
+      "type": "inference",
+      "description": "LLM이 이벤트 주제로 추론하여 질문 생성",
+      "input": "Post-event satisfaction survey for a tech conference",
+      "expectedCriteria": {
+        "minQuestions": 5,
+        "maxQuestions": 15,
+        "requiredTypes": ["rating", "long_text"],
+        "shouldIncludeTopics": ["speaker", "content", "venue", "networking"]
+      }
+    },
+    {
+      "id": "structured-1",
+      "type": "structured",
+      "description": "구체적 요구사항을 정리하여 질문 생성",
+      "input": "직원 만족도 조사를 만들어줘. 다음 항목을 포함해야 해: 1) 급여 만족도 2) 워라밸 3) 팀 분위기 4) 성장 기회 5) 복지 혜택. 각 항목은 1-5점 척도로 평가하고, 마지막에 자유 의견란 추가해줘.",
+      "expectedCriteria": {
+        "minQuestions": 6,
+        "maxQuestions": 10,
+        "requiredTypes": ["rating", "long_text"],
+        "mustHaveKeywords": ["급여", "워라밸", "팀", "성장", "복지"]
+      }
+    },
+    {
+      "id": "structured-2",
+      "type": "structured",
+      "description": "명시된 질문을 기반으로 설문 생성",
+      "input": "Create a product feedback survey with these exact questions: 1. How did you hear about us? (options: Social media, Friend, Google, Advertisement) 2. Rate the product quality 1-5 3. Would you recommend to others? Yes/No 4. Any suggestions for improvement?",
+      "expectedCriteria": {
+        "minQuestions": 4,
+        "maxQuestions": 6,
+        "requiredTypes": ["multiple_choice", "rating", "yes_no", "long_text"],
+        "mustHaveKeywords": ["hear about", "quality", "recommend", "suggestion"]
+      }
+    },
+    {
+      "id": "mixed-1",
+      "type": "mixed",
+      "description": "일부 명시 + 나머지 추론",
+      "input": "온라인 쇼핑몰 고객 설문을 만들어줘. 배송 속도와 포장 상태는 반드시 물어봐야 하고, 나머지는 적절히 추가해줘.",
+      "expectedCriteria": {
+        "minQuestions": 5,
+        "maxQuestions": 12,
+        "requiredTypes": ["rating"],
+        "mustHaveKeywords": ["배송", "포장"]
+      }
+    },
+    {
+      "id": "summarize-1",
+      "type": "summarize",
+      "description": "회의록을 요약하여 후속 피드백 설문 생성",
+      "input": "다음 회의록을 기반으로 팀원들에게 피드백을 받을 수 있는 설문을 만들어줘:\n\n[2024년 1분기 프로젝트 회고 회의록]\n참석자: 김팀장, 이개발, 박디자인, 최기획\n\n1. 프로젝트 일정 관련\n- 초기 일정이 너무 촉박했다는 의견 다수\n- 중간에 요구사항 변경이 3번 있었음\n- QA 기간이 부족해서 버그가 많이 발생\n\n2. 커뮤니케이션 이슈\n- 기획팀과 개발팀 간 소통이 원활하지 않았음\n- 디자인 시안 전달이 늦어져서 개발 일정에 영향\n- 주간 회의가 너무 길다는 피드백\n\n3. 기술적 이슈\n- 신규 프레임워크 도입으로 러닝커브 발생\n- 코드 리뷰 프로세스가 없어서 품질 이슈\n- 테스트 자동화가 안되어 있음\n\n4. 잘된 점\n- 팀워크는 전반적으로 좋았음\n- 야근 없이 마무리\n- 고객 만족도는 높았음\n\n액션 아이템: 다음 프로젝트 전에 개선점 파악 필요",
+      "expectedCriteria": {
+        "minQuestions": 8,
+        "maxQuestions": 15,
+        "requiredTypes": ["rating", "multiple_choice", "long_text"],
+        "mustHaveKeywords": ["일정", "커뮤니케이션", "소통"]
+      }
+    },
+    {
+      "id": "summarize-2",
+      "type": "summarize",
+      "description": "고객 불만 목록을 분석하여 만족도 조사 생성",
+      "input": "아래 고객 불만 사항들을 분석해서 서비스 개선을 위한 고객 만족도 조사를 만들어줘:\n\n[최근 3개월 고객 불만 접수 내역]\n\n배송 관련 (45건):\n- 배송이 예상보다 2-3일 늦게 옴\n- 배송 추적이 안됨\n- 배송비가 너무 비쌈\n- 새벽배송 지역이 한정적\n\n상품 품질 (32건):\n- 사진과 실물이 다름\n- 포장이 부실해서 파손됨\n- 사이즈가 정확하지 않음\n- 교환/반품 절차가 복잡함\n\n고객센터 (28건):\n- 전화 연결이 안됨\n- 챗봇이 도움이 안됨\n- 답변이 너무 늦음\n- 환불 처리가 오래 걸림\n\n웹사이트/앱 (15건):\n- 결제 오류가 자주 발생\n- 앱이 자주 튕김\n- 검색이 정확하지 않음\n- 필터 기능이 부족함\n\n이 불만들을 해소하기 위해 고객들에게 우선순위를 파악할 수 있는 설문을 만들어줘.",
+      "expectedCriteria": {
+        "minQuestions": 10,
+        "maxQuestions": 20,
+        "requiredTypes": ["rating", "multiple_choice"],
+        "mustHaveKeywords": ["배송", "품질", "고객센터"]
+      }
+    },
+    {
+      "id": "summarize-3",
+      "type": "summarize",
+      "description": "제품 기획서를 기반으로 사용자 조사 설문 생성",
+      "input": "다음 제품 기획서를 보고 타겟 사용자들에게 니즈를 파악할 수 있는 설문을 만들어줘:\n\n[신규 서비스: 반려동물 건강관리 앱 '펫케어']\n\n1. 서비스 개요\n반려동물의 건강을 체계적으로 관리할 수 있는 모바일 앱. 예방접종 일정, 병원 예약, 식단 관리, 운동량 체크 등 통합 관리.\n\n2. 타겟 고객\n- 25-45세 반려동물 보호자\n- 강아지/고양이 위주\n- 반려동물을 가족처럼 생각하는 사람들\n\n3. 핵심 기능\n가) 건강 기록: 체중, 접종 기록, 병원 방문 이력\n나) 알림 서비스: 예방접종, 약 복용, 병원 예약\n다) 커뮤니티: 같은 품종 보호자들과 정보 공유\n라) 병원 연동: 주변 동물병원 찾기, 예약\n마) AI 상담: 간단한 증상 체크\n\n4. 예상 가격\n- 기본: 무료 (광고 포함)\n- 프리미엄: 월 4,900원 (광고 제거, AI 상담 무제한)\n\n5. 경쟁사 분석\n- A앱: 건강기록만 가능, UI 불편\n- B앱: 병원 예약만 특화\n- C앱: 커뮤니티 위주\n\n이 기획서를 바탕으로 실제 사용자들이 어떤 기능을 원하는지, 가격은 적절한지 등을 파악할 수 있는 설문을 만들어줘.",
+      "expectedCriteria": {
+        "minQuestions": 10,
+        "maxQuestions": 18,
+        "requiredTypes": ["rating", "multiple_choice", "yes_no"],
+        "mustHaveKeywords": ["반려동물", "기능", "가격"]
+      }
+    }
+  ]
+}

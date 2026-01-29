@@ -1,0 +1,403 @@
+{
+  "timestamp": "20260130_075135",
+  "summary": {
+    "total": 5,
+    "success": 5,
+    "errors": 0,
+    "avgDurationMs": 5222
+  },
+  "results": [
+    {
+      "id": "inference-1",
+      "type": "inference",
+      "description": "LLM이 주제만 보고 추론하여 질문 생성",
+      "input": "Customer feedback survey for a coffee shop",
+      "status": "SUCCESS",
+      "durationMs": 10314,
+      "result": {
+        "title": "Customer Feedback Survey for Our Coffee Shop",
+        "questionCount": 11,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "yes_no",
+            "title": "Have you visited our coffee shop before?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How did you hear about our coffee shop?",
+            "options": [
+              "Social Media",
+              "Word of Mouth",
+              "Online Search",
+              "Walk-in",
+              "Other"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the quality of our coffee?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How satisfied are you with our customer service?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "What is your favorite coffee beverage at our shop?",
+            "options": [
+              "Espresso",
+              "Latte",
+              "Cappuccino",
+              "Americano",
+              "Mocha"
+            ],
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How would you describe the atmosphere of our coffee shop?",
+            "options": [
+              "Cozy",
+              "Modern",
+              "Traditional",
+              "Casual",
+              "Lively"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the cleanliness of our shop?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "What improvements would you like to see in our coffee shop?",
+            "required": false
+          },
+          {
+            "type": "short_text",
+            "title": "What is your favorite snack or pastry offered at our shop?",
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "Would you recommend our coffee shop to others?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "Please provide any other feedback or comments you have for us.",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-15"
+      }
+    },
+    {
+      "id": "inference-2",
+      "type": "inference",
+      "description": "LLM이 이벤트 주제로 추론하여 질문 생성",
+      "input": "Post-event satisfaction survey for a tech conference",
+      "status": "SUCCESS",
+      "durationMs": 5640,
+      "result": {
+        "title": "Tech Conference Post-Event Satisfaction Survey",
+        "questionCount": 12,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "short_text",
+            "title": "What is your age?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How did you hear about our conference?",
+            "options": [
+              "Email",
+              "Social Media",
+              "Word of Mouth",
+              "Company/Organization",
+              "Other"
+            ],
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Is this your first time attending our conference?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the overall event experience?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "Which aspect of the conference was most useful for you?",
+            "options": [
+              "Keynote Speeches",
+              "Workshops",
+              "Networking Sessions",
+              "Exhibition Hall",
+              "Panel Discussions"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How satisfied are you with the quality of the speakers?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How would you rate the organization and logistics of the event?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "How would you describe the venue?",
+            "options": [
+              "Excellent",
+              "Good",
+              "Average",
+              "Poor",
+              "Very Poor"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "How likely are you to attend future conferences hosted by us?",
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Did the conference meet your expectations?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "What was the highlight of the conference for you?",
+            "required": false
+          },
+          {
+            "type": "long_text",
+            "title": "Do you have any suggestions for improvement?",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-15"
+      }
+    },
+    {
+      "id": "structured-1",
+      "type": "structured",
+      "description": "구체적 요구사항을 정리하여 질문 생성",
+      "input": "직원 만족도 조사를 만들어줘. 다음 항목을 포함해야 해: 1) 급여 만족도 2) 워라밸 3) 팀 분위기 4) 성장 기회 5) 복지 혜택. 각 항목은 1-5점 척도로 평가하고, 마지막에 자유 의견란 추가해줘.",
+      "status": "SUCCESS",
+      "durationMs": 3597,
+      "result": {
+        "title": "직원 만족도 조사",
+        "questionCount": 6,
+        "types": [
+          "long_text",
+          "rating"
+        ],
+        "questions": [
+          {
+            "type": "rating",
+            "title": "현재 급여에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "현재 회사에서의 워라밸에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "귀하의 팀 분위기에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "현재 회사에서 제공하는 성장 기회에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "회사의 복지 혜택에 얼마나 만족하십니까?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "추가적으로 공유하고 싶은 의견이 있으면 자유롭게 작성해 주세요.",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "6-10"
+      }
+    },
+    {
+      "id": "structured-2",
+      "type": "structured",
+      "description": "명시된 질문을 기반으로 설문 생성",
+      "input": "Create a product feedback survey with these exact questions: 1. How did you hear about us? (options: Social media, Friend, Google, Advertisement) 2. Rate the product quality 1-5 3. Would you recommend to others? Yes/No 4. Any suggestions for improvement?",
+      "status": "SUCCESS",
+      "durationMs": 1661,
+      "result": {
+        "title": "Product Feedback Survey",
+        "questionCount": 4,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "multiple_choice",
+            "title": "How did you hear about us?",
+            "options": [
+              "Social media",
+              "Friend",
+              "Google",
+              "Advertisement"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "Rate the product quality",
+            "required": true
+          },
+          {
+            "type": "yes_no",
+            "title": "Would you recommend to others?",
+            "required": true
+          },
+          {
+            "type": "long_text",
+            "title": "Any suggestions for improvement?",
+            "required": false
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "4-6"
+      }
+    },
+    {
+      "id": "mixed-1",
+      "type": "mixed",
+      "description": "일부 명시 + 나머지 추론",
+      "input": "온라인 쇼핑몰 고객 설문을 만들어줘. 배송 속도와 포장 상태는 반드시 물어봐야 하고, 나머지는 적절히 추가해줘.",
+      "status": "SUCCESS",
+      "durationMs": 4898,
+      "result": {
+        "title": "온라인 쇼핑몰 고객 만족도 조사",
+        "questionCount": 9,
+        "types": [
+          "long_text",
+          "multiple_choice",
+          "rating",
+          "short_text",
+          "yes_no"
+        ],
+        "questions": [
+          {
+            "type": "short_text",
+            "title": "쇼핑몰에서의 구매 경험을 말씀해주세요.",
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "쇼핑몰에서 구매한 제품에 만족하셨습니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "배송 속도에 만족하셨습니까?",
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "포장 상태에 만족하셨습니까?",
+            "required": true
+          },
+          {
+            "type": "multiple_choice",
+            "title": "어떤 결제 수단을 사용하셨습니까?",
+            "options": [
+              "신용카드",
+              "직불카드",
+              "페이팔",
+              "기타"
+            ],
+            "required": true
+          },
+          {
+            "type": "rating",
+            "title": "고객 서비스에 얼마나 만족하셨습니까?",
+            "required": false
+          },
+          {
+            "type": "multiple_choice",
+            "title": "주로 어떤 카테고리의 제품을 구매하십니까?",
+            "options": [
+              "패션",
+              "전자기기",
+              "가정용품",
+              "식품",
+              "기타"
+            ],
+            "required": false
+          },
+          {
+            "type": "long_text",
+            "title": "개선해야 할 점이 있다면 말씀해주세요.",
+            "required": false
+          },
+          {
+            "type": "yes_no",
+            "title": "다시 이 쇼핑몰에서 구매하실 의향이 있으십니까?",
+            "required": true
+          }
+        ]
+      },
+      "validation": {
+        "questionCountValid": true,
+        "expectedRange": "5-12"
+      }
+    }
+  ]
+}

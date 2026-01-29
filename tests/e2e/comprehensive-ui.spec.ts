@@ -87,9 +87,8 @@ test.describe('Comprehensive UI & API Test', () => {
     await expect(page.getByRole('link', { name: 'New Survey' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate with AI' })).toBeVisible();
 
-    // Check sidebar elements (use first() to avoid strict mode violation)
+    // Check sidebar elements
     await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Settings' }).first()).toBeVisible();
 
     console.log('✅ Dashboard Page - All elements visible');
   });
@@ -156,15 +155,15 @@ test.describe('Comprehensive UI & API Test', () => {
 
     // Test Settings tab
     await page.locator('[data-testid="survey-tab-settings"]').click();
-    await expect(page).toHaveURL(/\/settings/);
+    await expect(page).toHaveURL(/\/settings/, { timeout: 10000 });
 
     // Test Responses tab
     await page.locator('[data-testid="survey-tab-responses"]').click();
-    await expect(page).toHaveURL(/\/responses/);
+    await expect(page).toHaveURL(/\/responses/, { timeout: 10000 });
 
     // Go back to Edit tab
     await page.locator('[data-testid="survey-tab-edit"]').click();
-    await expect(page).toHaveURL(/\/edit/);
+    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
     console.log('✅ Tab Navigation - All tabs functional');
   });

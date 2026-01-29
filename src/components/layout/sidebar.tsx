@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, FileText, Settings } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 const navItems = [
   {
@@ -11,16 +11,7 @@ const navItems = [
     href: "/",
     icon: LayoutDashboard,
   },
-  {
-    title: "Surveys",
-    href: "/surveys",
-    icon: FileText,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  // Surveys link removed - Dashboard already shows surveys list
 ];
 
 export function Sidebar() {

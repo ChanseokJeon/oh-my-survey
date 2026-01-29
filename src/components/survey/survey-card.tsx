@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MoreHorizontal, Edit, BarChart3, Settings, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface SurveyCardProps {
   survey: {
@@ -25,6 +27,9 @@ interface SurveyCardProps {
     createdAt: Date;
   };
   onDelete?: (id: string) => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
 }
 
 const statusColors = {
@@ -33,10 +38,19 @@ const statusColors = {
   closed: "bg-gray-100 text-gray-800",
 };
 
-export function SurveyCard({ survey, onDelete }: SurveyCardProps) {
+export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }: SurveyCardProps) {
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className={cn("flex flex-col relative", selected && "ring-2 ring-primary")}>
+      {selectable && (
+        <div className="absolute top-3 left-3 z-10">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(checked: boolean) => onSelect?.(survey.id, checked)}
+            aria-label={`Select ${survey.title}`}
+          />
+        </div>
+      )}
+      <CardHeader className={cn("flex flex-row items-center justify-between space-y-0 pb-2", selectable && "pl-10")}>
         <CardTitle className="text-lg font-semibold truncate pr-2">
           {survey.title}
         </CardTitle>

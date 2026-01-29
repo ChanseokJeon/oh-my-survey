@@ -144,7 +144,7 @@ describe('Survey API Logic', () => {
   describe('Authorization checks', () => {
     it('should require user ID for survey operations', () => {
       const session = { user: { id: 'user-123' } };
-      const noSession = null;
+      const noSession = null as { user?: { id?: string } } | null;
 
       expect(session?.user?.id).toBeDefined();
       expect(noSession?.user?.id).toBeUndefined();

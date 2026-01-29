@@ -333,6 +333,89 @@ test.describe('Comprehensive UI & API Test', () => {
 
     console.log('✅ Public Survey 404 - Working correctly');
   });
+
+  test('Survey Selection Mode', async ({ page }) => {
+    await login(page);
+
+    // Create two surveys for testing selection
+    await page.getByRole('link', { name: 'New Survey' }).click();
+    await page.getByPlaceholder('Enter survey title').fill(`Selection Test 1 ${Date.now()}`);
+    await page.getByRole('button', { name: 'Create Survey' }).click();
+    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    await page.getByRole('link', { name: 'Dashboard' }).first().click();
+    await expect(page).toHaveURL('/');
+
+    await page.getByRole('link', { name: 'New Survey' }).click();
+    await page.getByPlaceholder('Enter survey title').fill(`Selection Test 2 ${Date.now()}`);
+    await page.getByRole('button', { name: 'Create Survey' }).click();
+    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    await page.getByRole('link', { name: 'Dashboard' }).first().click();
+    await expect(page).toHaveURL('/');
+
+    // Click Select button to enter selection mode
+    await page.getByRole('button', { name: 'Select' }).click();
+
+    // Check bulk actions bar appears
+    await expect(page.getByText('Select surveys')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Delete/ })).toBeVisible();
+
+    // Select all checkbox should be visible
+    await expect(page.getByRole('checkbox', { name: 'Select all surveys' })).toBeVisible();
+
+    // Exit selection mode
+    await page.getByRole('button', { name: 'Cancel' }).click();
+
+    // Bulk actions bar should disappear
+    await expect(page.getByText('Select surveys')).not.toBeVisible();
+
+    console.log('✅ Survey Selection Mode - Working correctly');
+  });
+
+  test('Survey Bulk Delete', async ({ page }) => {
+    await login(page);
+
+    // Create a test survey for deletion
+    await page.getByRole('link', { name: 'New Survey' }).click();
+    const surveyTitle = `Bulk Delete Test ${Date.now()}`;
+    await page.getByPlaceholder('Enter survey title').fill(surveyTitle);
+    await page.getByRole('button', { name: 'Create Survey' }).click();
+    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    await page.getByRole('link', { name: 'Dashboard' }).first().click();
+    await expect(page).toHaveURL('/');
+
+    // Wait for surveys to load
+    await page.waitForTimeout(1000);
+
+    // Enter selection mode first
+    await page.getByRole('button', { name: 'Select' }).click();
+    await expect(page.getByText('Select surveys')).toBeVisible();
+
+    // Find the survey card and select its checkbox using aria-label
+    const checkbox = page.getByRole('checkbox', { name: `Select ${surveyTitle}` });
+    await checkbox.click();
+
+    // Verify selection count
+    await expect(page.getByText('1 of')).toBeVisible();
+
+    // Delete button should be enabled
+    const deleteButton = page.getByRole('button', { name: /Delete \(1\)/ });
+    await expect(deleteButton).toBeEnabled();
+
+    // Accept the confirmation dialog
+    page.on('dialog', dialog => dialog.accept());
+
+    // Click delete
+    await deleteButton.click();
+
+    // Should exit selection mode and survey should be deleted
+    await page.waitForTimeout(1000);
+    await expect(page.getByText(surveyTitle)).not.toBeVisible();
+
+    console.log('✅ Survey Bulk Delete - Working correctly');
+  });
 });
 
 // Summary test
@@ -350,5 +433,7 @@ test('Print Test Summary', async () => {
   console.log('- Settings page elements');
   console.log('- API endpoints health check');
   console.log('- 404 error pages');
+  console.log('- Survey selection mode');
+  console.log('- Bulk delete functionality');
   console.log('========================================\n');
 });

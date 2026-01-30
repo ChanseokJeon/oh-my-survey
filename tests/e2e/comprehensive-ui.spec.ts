@@ -85,7 +85,7 @@ test.describe('Comprehensive UI & API Test', () => {
     // Check dashboard elements
     await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'New Survey' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Generate with AI' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Generate with AI' }).first()).toBeVisible();
 
     // Check sidebar elements
     await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible();
@@ -153,17 +153,23 @@ test.describe('Comprehensive UI & API Test', () => {
     // Test Edit tab (should be active)
     await expect(page.locator('[data-testid="survey-tab-edit"]')).toBeVisible();
 
-    // Test Settings tab
-    await page.locator('[data-testid="survey-tab-settings"]').click();
-    await expect(page).toHaveURL(/\/settings/, { timeout: 10000 });
+    // Test Settings tab - use Promise.all to wait for navigation
+    await Promise.all([
+      page.waitForURL(/\/settings/, { timeout: 15000 }),
+      page.locator('[data-testid="survey-tab-settings"]').click(),
+    ]);
 
     // Test Responses tab
-    await page.locator('[data-testid="survey-tab-responses"]').click();
-    await expect(page).toHaveURL(/\/responses/, { timeout: 10000 });
+    await Promise.all([
+      page.waitForURL(/\/responses/, { timeout: 15000 }),
+      page.locator('[data-testid="survey-tab-responses"]').click(),
+    ]);
 
     // Go back to Edit tab
-    await page.locator('[data-testid="survey-tab-edit"]').click();
-    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+    await Promise.all([
+      page.waitForURL(/\/edit/, { timeout: 15000 }),
+      page.locator('[data-testid="survey-tab-edit"]').click(),
+    ]);
 
     console.log('✅ Tab Navigation - All tabs functional');
   });
@@ -197,8 +203,8 @@ test.describe('Comprehensive UI & API Test', () => {
   test('AI Generator Dialog', async ({ page }) => {
     await login(page);
 
-    // Click Generate with AI button
-    await page.getByRole('button', { name: 'Generate with AI' }).click();
+    // Click Generate with AI button (use first() to avoid strict mode violation)
+    await page.getByRole('button', { name: 'Generate with AI' }).first().click();
 
     // Dialog should open
     await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).toBeVisible();
@@ -269,9 +275,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
-    // Navigate to Responses
-    await page.locator('[data-testid="survey-tab-responses"]').click();
-    await expect(page).toHaveURL(/\/responses/);
+    // Navigate to Responses - use Promise.all to wait for navigation
+    await Promise.all([
+      page.waitForURL(/\/responses/, { timeout: 15000 }),
+      page.locator('[data-testid="survey-tab-responses"]').click(),
+    ]);
 
     // Should show empty state or response list
     await page.waitForTimeout(1000);

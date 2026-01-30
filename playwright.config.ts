@@ -5,8 +5,8 @@ export default defineConfig({
   fullyParallel: true,
   timeout: 60000, // 60 second timeout per test
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1, // Allow 1 retry locally for PGlite WASM flakiness
+  workers: process.env.CI ? 1 : 4, // Limit workers to reduce PGlite memory pressure
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:3000',

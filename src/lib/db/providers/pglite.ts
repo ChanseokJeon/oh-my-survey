@@ -1,14 +1,21 @@
 /**
  * PGlite Provider
  * Lightweight PostgreSQL for local development
+ *
+ * Uses globalThis pattern to survive Next.js module re-evaluation in dev mode.
+ * This ensures a single PGlite instance across all module contexts.
  */
 
 import { drizzle } from 'drizzle-orm/pglite';
 import { PGlite } from '@electric-sql/pglite';
 import * as schema from '../schema';
 
-let pgliteInstance: PGlite | null = null;
-let initializationPromise: Promise<void> | null = null;
+// Use globalThis to survive Next.js module re-evaluation in dev mode
+const globalForPGlite = globalThis as unknown as {
+  pgliteInstance: PGlite | undefined;
+  pgliteInitPromise: Promise<void> | undefined;
+  pgliteDataPath: string | undefined;
+};
 
 async function initializeSchema(client: PGlite) {
   console.log('[PGlite] Creating schema...');
@@ -122,17 +129,23 @@ export function createPGliteDatabase(dataPath: string) {
   // This is a known issue - for now, recommend using postgres provider for local dev
   // See: https://github.com/electric-sql/pglite/issues
 
-  // Reuse existing instance (singleton pattern)
-  if (!pgliteInstance) {
-    console.log(`[PGlite] Initializing database at: ${dataPath}`);
+  // Reuse existing instance (singleton pattern via globalThis)
+  if (!globalForPGlite.pgliteInstance) {
+    console.log(`[PGlite] Creating NEW instance at: ${dataPath} (process.pid=${process.pid})`);
+    globalForPGlite.pgliteDataPath = dataPath;
     // Use file-based persistence to survive hot reloads
-    pgliteInstance = new PGlite(dataPath);
+    globalForPGlite.pgliteInstance = new PGlite(dataPath);
 
     // Start schema initialization and track the promise
-    initializationPromise = initializeSchema(pgliteInstance);
+    globalForPGlite.pgliteInitPromise = initializeSchema(globalForPGlite.pgliteInstance);
+  } else {
+    console.log(`[PGlite] Reusing existing instance at: ${globalForPGlite.pgliteDataPath} (requested: ${dataPath})`);
+    if (globalForPGlite.pgliteDataPath !== dataPath) {
+      console.warn(`[PGlite] Warning: Path mismatch!`);
+    }
   }
 
-  return drizzle(pgliteInstance, { schema });
+  return drizzle(globalForPGlite.pgliteInstance, { schema });
 }
 
 /**
@@ -140,20 +153,22 @@ export function createPGliteDatabase(dataPath: string) {
  * Call this before any database queries to avoid race conditions.
  */
 export async function ensurePGliteReady(): Promise<void> {
-  if (!initializationPromise) {
+  if (!globalForPGlite.pgliteInitPromise) {
     throw new Error('[PGlite] Database not initialized. Call createPGliteDatabase first.');
   }
-  await initializationPromise;
+  await globalForPGlite.pgliteInitPromise;
 }
 
 export async function closePGlite() {
-  if (pgliteInstance) {
-    await pgliteInstance.close();
-    pgliteInstance = null;
-    initializationPromise = null;
+  if (globalForPGlite.pgliteInstance) {
+    await globalForPGlite.pgliteInstance.close();
+    globalForPGlite.pgliteInstance = undefined;
+    globalForPGlite.pgliteInitPromise = undefined;
+    globalForPGlite.pgliteDataPath = undefined;
   }
 }
 
 export function getPGliteInstance() {
-  return pgliteInstance;
+  console.log(`[PGlite] getPGliteInstance called: instance=${globalForPGlite.pgliteInstance ? 'EXISTS' : 'NULL'}`);
+  return globalForPGlite.pgliteInstance;
 }

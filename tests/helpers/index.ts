@@ -6,3 +6,4 @@
 export * from './factories';
 export * from './api';
 export * from './assertions';
+export * from './cleanup';

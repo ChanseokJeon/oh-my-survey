@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, ensureDbReady, currentProvider } from "@/lib/db";
+import { db, questions, ensureDbReady, currentProvider } from "@/lib/db";
 import { getPGliteInstance } from "@/lib/db/providers";
-import { eq, and, asc, count } from "drizzle-orm";
+import { eq, asc, count } from "drizzle-orm";
 import { createQuestionSchema } from "@/lib/validations/question";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { handleApiError } from "@/lib/utils/api-error";
 
 export async function GET(
   request: Request,
@@ -18,11 +20,7 @@ export async function GET(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select({ id: surveys.id })
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
-
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }
@@ -49,11 +47,7 @@ export async function POST(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select({ id: surveys.id })
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
-
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }
@@ -101,9 +95,6 @@ export async function POST(
 
     return NextResponse.json(newQuestion, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

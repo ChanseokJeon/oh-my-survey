@@ -1,9 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
-let anthropicClient: Anthropic | null = null;
-let openaiClient: OpenAI | null = null;
-
 export type AIProvider = "anthropic" | "openai";
 
 export function getConfiguredProvider(): AIProvider | null {
@@ -16,40 +13,36 @@ export function getConfiguredProvider(): AIProvider | null {
   return null;
 }
 
-export function getAnthropicClient(): Anthropic {
-  if (!anthropicClient) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-
-    if (!apiKey) {
-      throw new Error(
-        "ANTHROPIC_API_KEY environment variable is not set. " +
-        "Please add it to your .env.local file."
-      );
+// Generic client factory to eliminate duplication
+function createClientFactory<T>(
+  envKey: string,
+  clientName: string,
+  factory: (apiKey: string) => T
+): () => T {
+  let client: T | null = null;
+  return () => {
+    if (!client) {
+      const apiKey = process.env[envKey];
+      if (!apiKey) {
+        throw new Error(
+          `${envKey} environment variable is not set. ` +
+          `Please add it to your .env.local file to use ${clientName}.`
+        );
+      }
+      client = factory(apiKey);
     }
-
-    anthropicClient = new Anthropic({
-      apiKey,
-    });
-  }
-
-  return anthropicClient;
+    return client;
+  };
 }
 
-export function getOpenAIClient(): OpenAI {
-  if (!openaiClient) {
-    const apiKey = process.env.OPENAI_API_KEY;
+export const getAnthropicClient = createClientFactory(
+  "ANTHROPIC_API_KEY",
+  "Anthropic Claude",
+  (apiKey) => new Anthropic({ apiKey })
+);
 
-    if (!apiKey) {
-      throw new Error(
-        "OPENAI_API_KEY environment variable is not set. " +
-        "Please add it to your .env.local file."
-      );
-    }
-
-    openaiClient = new OpenAI({
-      apiKey,
-    });
-  }
-
-  return openaiClient;
-}
+export const getOpenAIClient = createClientFactory(
+  "OPENAI_API_KEY",
+  "OpenAI",
+  (apiKey) => new OpenAI({ apiKey })
+);

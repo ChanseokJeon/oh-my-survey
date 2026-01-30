@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, surveys, questions, responses, ensureDbReady } from "@/lib/db";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { google } from "googleapis";
 import { z } from "zod";
+import { buildResponseHeaders, buildResponseRows } from "@/lib/utils/response-formatter";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { handleApiError } from "@/lib/utils/api-error";
 
 const syncSheetsSchema = z.object({
   spreadsheetId: z.string().optional(),
@@ -23,10 +26,7 @@ export async function POST(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select()
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -81,28 +81,8 @@ export async function POST(
       .orderBy(asc(responses.completedAt));
 
     // Prepare data
-    const headers = [
-      "Response ID",
-      "Submitted At",
-      "IP Address",
-      ...surveyQuestions.map((q) => q.title),
-    ];
-
-    const rows = surveyResponses.map((response) => {
-      const answers = response.answersJson as Record<string, unknown>;
-      return [
-        response.id,
-        response.completedAt.toISOString(),
-        response.ipAddress || "",
-        ...surveyQuestions.map((q) => {
-          const answer = answers[q.id];
-          if (Array.isArray(answer)) {
-            return answer.join("; ");
-          }
-          return String(answer ?? "");
-        }),
-      ];
-    });
+    const headers = buildResponseHeaders(surveyQuestions);
+    const rows = buildResponseRows(surveyResponses, surveyQuestions);
 
     // Clear existing data and write new data
     await sheets.spreadsheets.values.clear({
@@ -136,13 +116,6 @@ export async function POST(
       spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
     });
   } catch (error) {
-    console.error("Sheets sync error:", error);
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    return NextResponse.json(
-      { error: "Failed to sync with Google Sheets" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

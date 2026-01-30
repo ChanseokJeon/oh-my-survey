@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses, ensureDbReady } from "@/lib/db";
-import { eq, and, asc } from "drizzle-orm";
+import { db, questions, responses, ensureDbReady } from "@/lib/db";
+import { eq, asc } from "drizzle-orm";
+import { buildResponseHeaders, buildResponseRows } from "@/lib/utils/response-formatter";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
 
 function escapeCSV(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
@@ -23,10 +25,7 @@ export async function GET(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select()
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -47,28 +46,8 @@ export async function GET(
     .orderBy(asc(responses.completedAt));
 
   // Build CSV
-  const headers = [
-    "Response ID",
-    "Submitted At",
-    "IP Address",
-    ...surveyQuestions.map((q) => q.title),
-  ];
-
-  const rows = surveyResponses.map((response) => {
-    const answers = response.answersJson as Record<string, unknown>;
-    return [
-      response.id,
-      response.completedAt.toISOString(),
-      response.ipAddress || "",
-      ...surveyQuestions.map((q) => {
-        const answer = answers[q.id];
-        if (Array.isArray(answer)) {
-          return answer.join("; ");
-        }
-        return String(answer ?? "");
-      }),
-    ];
-  });
+  const headers = buildResponseHeaders(surveyQuestions);
+  const rows = buildResponseRows(surveyResponses, surveyQuestions);
 
   const csvContent = [
     headers.map(escapeCSV).join(","),

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, ensureDbReady } from "@/lib/db";
-import { eq, and } from "drizzle-orm";
+import { ensureDbReady } from "@/lib/db";
 import { google } from "googleapis";
 import { z } from "zod";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
 
 const testSheetsSchema = z.object({
   spreadsheetId: z.string().min(1, "Spreadsheet ID is required"),
@@ -23,10 +23,7 @@ export async function POST(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select()
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });

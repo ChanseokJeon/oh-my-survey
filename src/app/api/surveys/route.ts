@@ -5,6 +5,7 @@ import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, desc, count } from "drizzle-orm";
 import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
+import { handleApiError } from "@/lib/utils/api-error";
 
 export async function GET() {
   const session = await auth();
@@ -93,10 +94,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newSurvey, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    console.error('[API] POST /api/surveys error:', error);
-    throw error;
+    return handleApiError(error);
   }
 }

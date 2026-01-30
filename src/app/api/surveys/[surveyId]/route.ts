@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, surveys, questions, responses, ensureDbReady } from "@/lib/db";
-import { eq, and, asc, count } from "drizzle-orm";
+import { eq, asc, count } from "drizzle-orm";
 import { updateSurveySchema } from "@/lib/validations/survey";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { handleApiError } from "@/lib/utils/api-error";
 
 export async function GET(
   request: Request,
@@ -16,10 +18,7 @@ export async function GET(
 
   const { surveyId } = await params;
 
-  const [survey] = await db
-    .select()
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -56,10 +55,7 @@ export async function PATCH(
   const { surveyId } = await params;
 
   // Verify ownership
-  const [existing] = await db
-    .select({ id: surveys.id })
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const existing = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!existing) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
@@ -80,10 +76,7 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -100,10 +93,7 @@ export async function DELETE(
   const { surveyId } = await params;
 
   // Verify ownership
-  const [existing] = await db
-    .select({ id: surveys.id })
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
+  const existing = await verifySurveyOwnership(surveyId, session.user.id);
 
   if (!existing) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });

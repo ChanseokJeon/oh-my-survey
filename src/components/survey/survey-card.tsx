@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { getSurveyStatusColor } from "@/constants/survey-status";
 
 interface SurveyCardProps {
   survey: {
@@ -31,12 +32,6 @@ interface SurveyCardProps {
   selected?: boolean;
   onSelect?: (id: string, selected: boolean) => void;
 }
-
-const statusColors = {
-  draft: "bg-yellow-100 text-yellow-800",
-  published: "bg-green-100 text-green-800",
-  closed: "bg-gray-100 text-gray-800",
-};
 
 export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }: SurveyCardProps) {
   return (
@@ -92,7 +87,7 @@ export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }:
       </CardHeader>
       <CardContent className="flex-1">
         <div className="flex items-center gap-2 mb-4">
-          <Badge className={statusColors[survey.status]}>{survey.status}</Badge>
+          <Badge className={getSurveyStatusColor(survey.status)}>{survey.status}</Badge>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>

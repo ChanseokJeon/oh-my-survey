@@ -4,6 +4,7 @@ import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, and, asc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { submitResponseSchema } from "@/lib/validations/response";
+import { handleApiError } from "@/lib/utils/api-error";
 
 export async function POST(
   request: Request,
@@ -140,9 +141,6 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

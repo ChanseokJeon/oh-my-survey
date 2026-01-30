@@ -14,22 +14,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import type { EditableSurvey, EditableQuestion } from "./types";
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  short_text: "Short Text",
-  long_text: "Long Text",
-  multiple_choice: "Multiple Choice",
-  yes_no: "Yes/No",
-  rating: "Rating",
-};
-
-const QUESTION_TYPE_COLORS: Record<string, string> = {
-  short_text: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  long_text: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  multiple_choice: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  yes_no: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  rating: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-};
+import { getQuestionTypeLabel, getQuestionTypeColor } from "@/constants/question-types";
 
 interface PreviewStepProps {
   survey: EditableSurvey;
@@ -188,9 +173,9 @@ function QuestionCard({
           <div className="flex items-center gap-2 flex-wrap">
             <Badge
               variant="secondary"
-              className={QUESTION_TYPE_COLORS[question.type]}
+              className={getQuestionTypeColor(question.type)}
             >
-              {QUESTION_TYPE_LABELS[question.type] || question.type}
+              {getQuestionTypeLabel(question.type)}
             </Badge>
             {question.required && (
               <Badge variant="outline" className="text-xs">

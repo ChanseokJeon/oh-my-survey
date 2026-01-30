@@ -7,45 +7,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Type, AlignLeft, List, ToggleLeft, Star } from "lucide-react";
-
-const questionTypes = [
-  {
-    type: "short_text" as const,
-    label: "Short Text",
-    description: "Single line text input",
-    icon: Type,
-  },
-  {
-    type: "long_text" as const,
-    label: "Long Text",
-    description: "Multi-line text input",
-    icon: AlignLeft,
-  },
-  {
-    type: "multiple_choice" as const,
-    label: "Multiple Choice",
-    description: "Select one option",
-    icon: List,
-  },
-  {
-    type: "yes_no" as const,
-    label: "Yes / No",
-    description: "Simple yes or no",
-    icon: ToggleLeft,
-  },
-  {
-    type: "rating" as const,
-    label: "Rating",
-    description: "1-5 star rating",
-    icon: Star,
-  },
-];
+import { QUESTION_TYPES } from "@/constants/question-types";
+import { QuestionType } from "@/types/question";
 
 interface QuestionTypePickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating") => void;
+  onSelect: (type: QuestionType) => void;
 }
 
 export function QuestionTypePicker({
@@ -60,7 +28,7 @@ export function QuestionTypePicker({
           <DialogTitle>Add Question</DialogTitle>
         </DialogHeader>
         <div className="grid gap-2">
-          {questionTypes.map((qt) => (
+          {QUESTION_TYPES.map((qt) => (
             <Button
               key={qt.type}
               variant="outline"

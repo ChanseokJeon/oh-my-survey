@@ -17,10 +17,11 @@ const globalForPGlite = globalThis as unknown as {
   pgliteDataPath: string | undefined;
 };
 
-async function initializeSchema(client: PGlite) {
-  console.log('[PGlite] Creating schema...');
-
-  // Create enums
+/**
+ * Creates PostgreSQL enum types for the database schema.
+ * Uses DO $$ blocks to avoid errors if enums already exist.
+ */
+async function createEnumTypes(client: PGlite): Promise<void> {
   await client.query(`
     DO $$ BEGIN CREATE TYPE survey_status AS ENUM ('draft', 'published', 'closed');
     EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -33,8 +34,13 @@ async function initializeSchema(client: PGlite) {
     DO $$ BEGIN CREATE TYPE question_type AS ENUM ('short_text', 'long_text', 'multiple_choice', 'yes_no', 'rating');
     EXCEPTION WHEN duplicate_object THEN null; END $$;
   `);
+}
 
-  // Create tables
+/**
+ * Creates NextAuth.js-related tables for authentication.
+ * Includes users, accounts, sessions, and verification_tokens tables.
+ */
+async function createAuthTables(client: PGlite): Promise<void> {
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,7 +80,13 @@ async function initializeSchema(client: PGlite) {
       expires TIMESTAMP NOT NULL
     )
   `);
+}
 
+/**
+ * Creates application-specific tables for the survey system.
+ * Includes surveys, questions, and responses tables.
+ */
+async function createAppTables(client: PGlite): Promise<void> {
   await client.query(`
     CREATE TABLE IF NOT EXISTS surveys (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -113,17 +125,48 @@ async function initializeSchema(client: PGlite) {
       ip_address VARCHAR(45)
     )
   `);
+}
 
-  // Create test user
+/**
+ * Seeds initial test data for development.
+ * Creates a test user if it doesn't already exist.
+ */
+async function seedTestData(client: PGlite): Promise<void> {
   await client.query(`
     INSERT INTO users (email, name)
     VALUES ('test@example.com', 'Test User')
     ON CONFLICT (email) DO NOTHING
   `);
+}
+
+/**
+ * Initializes the complete database schema.
+ * Orchestrates enum creation, table creation, and test data seeding.
+ */
+async function initializeSchema(client: PGlite): Promise<void> {
+  console.log('[PGlite] Creating schema...');
+
+  await createEnumTypes(client);
+  await createAuthTables(client);
+  await createAppTables(client);
+  await seedTestData(client);
 
   console.log('[PGlite] Schema ready');
 }
 
+/**
+ * Creates a PGlite database instance with in-memory storage.
+ *
+ * @param _dataPath - Ignored parameter. File path is not used due to Next.js 15 compatibility.
+ *
+ * **Why _dataPath is ignored:**
+ * - Next.js 15 dev mode runs RSC server and page renderer in separate processes
+ * - File-based PGlite causes WASM crashes when multiple processes access the same directory
+ * - In-memory mode avoids multi-process file locking issues entirely
+ * - Singleton pattern via globalThis ensures single instance across all module contexts
+ *
+ * @returns Drizzle database instance configured with PGlite
+ */
 export function createPGliteDatabase(_dataPath: string) {
   // NOTE: Using in-memory mode to avoid multi-process file locking issues
   // Next.js 15 dev mode runs RSC server and page renderer in separate processes

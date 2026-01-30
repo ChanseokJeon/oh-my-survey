@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, ensureDbReady } from "@/lib/db";
+import { db, questions, ensureDbReady } from "@/lib/db";
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { reorderQuestionsSchema } from "@/lib/validations/question";
+import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { handleApiError } from "@/lib/utils/api-error";
 
 export async function PATCH(
   request: Request,
@@ -17,11 +19,7 @@ export async function PATCH(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const [survey] = await db
-    .select({ id: surveys.id })
-    .from(surveys)
-    .where(and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.id)));
-
+  const survey = await verifySurveyOwnership(surveyId, session.user.id);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }
@@ -65,9 +63,6 @@ export async function PATCH(
 
     return NextResponse.json({ questions: updatedQuestions });
   } catch (error) {
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-    throw error;
+    return handleApiError(error);
   }
 }

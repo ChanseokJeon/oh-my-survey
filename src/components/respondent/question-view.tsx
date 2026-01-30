@@ -6,14 +6,7 @@ import { MultipleChoiceInput } from "./inputs/multiple-choice-input";
 import { YesNoInput } from "./inputs/yes-no-input";
 import { RatingInput } from "./inputs/rating-input";
 import { Badge } from "@/components/ui/badge";
-
-interface Question {
-  id: string;
-  type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating";
-  title: string;
-  options: string[] | null;
-  required: boolean;
-}
+import { Question } from "@/types/question";
 
 interface QuestionViewProps {
   question: Question;

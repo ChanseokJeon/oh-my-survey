@@ -7,15 +7,7 @@ import { CompletionScreen } from "./completion-screen";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Question {
-  id: string;
-  type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating";
-  title: string;
-  options: string[] | null;
-  required: boolean;
-  order: number;
-}
+import { Question } from "@/types/question";
 
 interface SurveyData {
   id: string;

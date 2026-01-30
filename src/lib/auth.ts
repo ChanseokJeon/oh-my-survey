@@ -9,8 +9,7 @@ import { accounts, sessions, users, verificationTokens } from "./db/schema";
 import { eq } from "drizzle-orm";
 
 // Build providers array conditionally
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const providers: any[] = [];
+const providers: NextAuthConfig['providers'] = [];
 
 // Only add Google if credentials are valid (not test values)
 if (
@@ -26,119 +25,139 @@ if (
   );
 }
 
-// Always add Credentials provider
-providers.push(
-  Credentials({
-    name: "credentials",
-    credentials: {
-      email: { label: "Email", type: "email" },
-      password: { label: "Password", type: "password" },
-    },
-    async authorize(credentials) {
-      console.log('[Auth] authorize called with:', credentials?.email);
+// Helper: Find or create user via PGlite raw SQL
+async function findOrCreateUserPGlite(email: string) {
+  const pglite = getPGliteInstance();
+  if (!pglite) {
+    console.error('[Auth] PGlite instance not available');
+    throw new Error('PGlite instance not available');
+  }
 
-      if (!credentials?.email || !credentials?.password) {
-        console.log('[Auth] Missing credentials');
-        return null;
-      }
+  // Find existing user
+  const existingResult = await pglite.query(
+    `SELECT id, email, name FROM users WHERE email = $1 LIMIT 1`,
+    [email]
+  );
 
-      const email = credentials.email as string;
-      const password = credentials.password as string;
+  if (existingResult.rows.length > 0) {
+    const user = existingResult.rows[0] as { id: string; email: string; name: string | null };
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Found existing user:', user.id);
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    };
+  }
 
-      // Simple password check for test accounts (dev only)
-      // In production, use proper password hashing (bcrypt)
-      if (password !== "test1234") {
-        console.log('[Auth] Invalid password');
-        return null;
-      }
+  // Create new user
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Creating new user for:', email);
+  }
+  const newUserResult = await pglite.query(
+    `INSERT INTO users (email, name) VALUES ($1, $2) RETURNING id, email, name`,
+    [email, email.split("@")[0]]
+  );
 
-      console.log('[Auth] Password check passed, currentProvider:', currentProvider);
+  const newUser = newUserResult.rows[0] as { id: string; email: string; name: string | null };
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Auth] Created new user:', newUser.id);
+  }
+  return {
+    id: newUser.id,
+    email: newUser.email,
+    name: newUser.name,
+  };
+}
 
-      // Ensure database is ready before operations
-      try {
-        await ensureDbReady();
-      } catch (e) {
-        console.error('[Auth] ensureDbReady failed:', e);
-        throw e;
-      }
+// Helper: Find or create user via Drizzle ORM (PostgreSQL)
+async function findOrCreateUserPostgres(email: string) {
+  const existingUsers = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
 
-      // For PGlite, use raw SQL due to drizzle-orm compatibility issues
-      if (currentProvider === 'pglite') {
-        const pglite = getPGliteInstance();
-        if (!pglite) {
-          console.error('[Auth] PGlite instance not available');
-          throw new Error('PGlite instance not available');
+  if (existingUsers.length > 0) {
+    return {
+      id: existingUsers[0].id,
+      email: existingUsers[0].email,
+      name: existingUsers[0].name,
+    };
+  }
+
+  // Create new user for test account
+  const newUser = await db
+    .insert(users)
+    .values({
+      email,
+      name: email.split("@")[0],
+    })
+    .returning();
+
+  return {
+    id: newUser[0].id,
+    email: newUser[0].email,
+    name: newUser[0].name,
+  };
+}
+
+// Only add Credentials provider in development mode for testing
+if (process.env.NODE_ENV === 'development') {
+  providers.push(
+    Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Auth] authorize called with:', credentials?.email);
         }
 
-        try {
-          // Find existing user
-          const existingResult = await pglite.query(
-            `SELECT id, email, name FROM users WHERE email = $1 LIMIT 1`,
-            [email]
-          );
-
-          if (existingResult.rows.length > 0) {
-            const user = existingResult.rows[0] as { id: string; email: string; name: string | null };
-            console.log('[Auth] Found existing user:', user.id);
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-            };
+        if (!credentials?.email || !credentials?.password) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Auth] Missing credentials');
           }
+          return null;
+        }
 
-          // Create new user
-          console.log('[Auth] Creating new user for:', email);
-          const newUserResult = await pglite.query(
-            `INSERT INTO users (email, name) VALUES ($1, $2) RETURNING id, email, name`,
-            [email, email.split("@")[0]]
-          );
+        const email = credentials.email as string;
+        const password = credentials.password as string;
 
-          const newUser = newUserResult.rows[0] as { id: string; email: string; name: string | null };
-          console.log('[Auth] Created new user:', newUser.id);
-          return {
-            id: newUser.id,
-            email: newUser.email,
-            name: newUser.name,
-          };
+        // Check password against environment variable
+        const testPassword = process.env.TEST_USER_PASSWORD || "test1234";
+        if (password !== testPassword) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Auth] Invalid password');
+          }
+          return null;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Auth] Password check passed, currentProvider:', currentProvider);
+        }
+
+        // Ensure database is ready before operations
+        try {
+          await ensureDbReady();
         } catch (e) {
-          console.error('[Auth] PGlite query failed:', e);
+          console.error('[Auth] ensureDbReady failed:', e);
           throw e;
         }
-      }
 
-      // PostgreSQL: use drizzle ORM
-      const existingUsers = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+        // Route to appropriate helper based on provider
+        if (currentProvider === 'pglite') {
+          return await findOrCreateUserPGlite(email);
+        }
 
-      if (existingUsers.length > 0) {
-        return {
-          id: existingUsers[0].id,
-          email: existingUsers[0].email,
-          name: existingUsers[0].name,
-        };
-      }
-
-      // Create new user for test account
-      const newUser = await db
-        .insert(users)
-        .values({
-          email,
-          name: email.split("@")[0],
-        })
-        .returning();
-
-      return {
-        id: newUser[0].id,
-        email: newUser[0].email,
-        name: newUser[0].name,
-      };
-    },
-  })
-);
+        return await findOrCreateUserPostgres(email);
+      },
+    })
+  );
+}
 
 // Build NextAuth config
 const authConfig: NextAuthConfig = {

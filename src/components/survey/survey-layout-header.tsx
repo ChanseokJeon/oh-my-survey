@@ -4,6 +4,7 @@ import { Survey, SurveyStatus } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getSurveyStatusVariant } from '@/constants/survey-status';
 
 interface SurveyLayoutHeaderProps {
   survey: Survey;

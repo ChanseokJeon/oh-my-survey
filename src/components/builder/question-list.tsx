@@ -16,15 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { QuestionItem } from "./question-item";
-
-interface Question {
-  id: string;
-  type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating";
-  title: string;
-  options: string[] | null;
-  required: boolean;
-  order: number;
-}
+import { Question } from "@/types/question";
 
 interface QuestionListProps {
   questions: Question[];

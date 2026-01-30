@@ -5,33 +5,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, Pencil, Trash2, Type, AlignLeft, List, ToggleLeft, Star } from "lucide-react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const typeIcons = {
-  short_text: Type,
-  long_text: AlignLeft,
-  multiple_choice: List,
-  yes_no: ToggleLeft,
-  rating: Star,
-};
-
-const typeLabels = {
-  short_text: "Short Text",
-  long_text: "Long Text",
-  multiple_choice: "Multiple Choice",
-  yes_no: "Yes/No",
-  rating: "Rating",
-};
-
-interface Question {
-  id: string;
-  type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating";
-  title: string;
-  options: string[] | null;
-  required: boolean;
-  order: number;
-}
+import { Question } from "@/types/question";
+import { getQuestionTypeIcon, getQuestionTypeLabel } from "@/constants/question-types";
 
 interface QuestionItemProps {
   question: Question;
@@ -54,7 +31,7 @@ export function QuestionItem({ question, onEdit, onDelete }: QuestionItemProps) 
     transition,
   };
 
-  const Icon = typeIcons[question.type];
+  const Icon = getQuestionTypeIcon(question.type);
 
   return (
     <Card
@@ -77,7 +54,7 @@ export function QuestionItem({ question, onEdit, onDelete }: QuestionItemProps) 
         <div className="flex items-center gap-2 mb-1">
           <Icon className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">
-            {typeLabels[question.type]}
+            {getQuestionTypeLabel(question.type)}
           </span>
           {question.required && (
             <Badge variant="secondary" className="text-xs">Required</Badge>

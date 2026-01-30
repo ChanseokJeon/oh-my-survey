@@ -7,6 +7,14 @@ const TEST_PASSWORD = 'test1234';
 // Store API responses for verification
 const apiCalls: Array<{ url: string; status: number; method: string }> = [];
 
+// Track created surveys for cleanup
+let createdSurveyIds: string[] = [];
+let storedCookies: { name: string; value: string }[] = [];
+const BASE_URL = 'http://localhost:3000';
+
+// Configure tests to run serially to avoid parallel execution conflicts
+test.describe.configure({ mode: 'serial' });
+
 // Helper to login
 async function login(page: Page) {
   await page.goto('/login');
@@ -15,6 +23,8 @@ async function login(page: Page) {
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
   await page.waitForURL('/', { timeout: 15000 });
   await page.waitForTimeout(500);
+  // Store cookies for cleanup
+  storedCookies = await page.context().cookies();
 }
 
 // Helper to collect API calls
@@ -132,6 +142,11 @@ test.describe('Comprehensive UI & API Test', () => {
     // Should redirect to edit page
     await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Verify API call (201 Created is correct for POST)
     const createCall = apiCalls.find(c => c.url.includes('/api/surveys') && c.method === 'POST');
     expect(createCall).toBeDefined();
@@ -149,6 +164,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByPlaceholder('Enter survey title').fill(`Tab Test ${Date.now()}`);
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
 
     // Test Edit tab (should be active)
     await expect(page.locator('[data-testid="survey-tab-edit"]')).toBeVisible();
@@ -183,6 +203,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByPlaceholder('Enter survey title').fill(`Question Test ${Date.now()}`);
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
 
     // Click Add Question button
     await page.getByRole('button', { name: /Add.*question/i }).click();
@@ -238,6 +263,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Navigate to Settings
     await page.locator('[data-testid="survey-tab-settings"]').click();
     await expect(page).toHaveURL(/\/settings/);
@@ -275,6 +305,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Navigate to Responses - use Promise.all to wait for navigation
     await Promise.all([
       page.waitForURL(/\/responses/, { timeout: 15000 }),
@@ -295,6 +330,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByPlaceholder('Enter survey title').fill(`Nav Test ${Date.now()}`);
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
 
     // Click back button or Dashboard link (use first() due to multiple Dashboard links)
     await page.getByRole('link', { name: 'Dashboard' }).first().click();
@@ -351,6 +391,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
+    // Track first survey ID for cleanup
+    let url = page.url();
+    let surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     await page.getByRole('link', { name: 'Dashboard' }).first().click();
     await expect(page).toHaveURL('/');
 
@@ -358,6 +403,11 @@ test.describe('Comprehensive UI & API Test', () => {
     await page.getByPlaceholder('Enter survey title').fill(`Selection Test 2 ${Date.now()}`);
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
+
+    // Track second survey ID for cleanup
+    url = page.url();
+    surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
 
     await page.getByRole('link', { name: 'Dashboard' }).first().click();
     await expect(page).toHaveURL('/');
@@ -423,6 +473,22 @@ test.describe('Comprehensive UI & API Test', () => {
     await expect(page.getByText(surveyTitle)).not.toBeVisible();
 
     console.log('✅ Survey Bulk Delete - Working correctly');
+  });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
   });
 });
 

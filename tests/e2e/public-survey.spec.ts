@@ -14,6 +14,10 @@ const BASE_URL = 'http://localhost:3000';
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'test1234';
 
+// Track created surveys for cleanup
+let createdSurveyIds: string[] = [];
+let storedCookies: { name: string; value: string }[] = [];
+
 // Helper: Login to get session
 async function loginAndGetSession(page: Page) {
   await page.goto('/login');
@@ -22,6 +26,8 @@ async function loginAndGetSession(page: Page) {
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
   await page.waitForURL('/', { timeout: 15000 });
   await page.waitForTimeout(500);
+  // Store cookies for cleanup
+  storedCookies = await page.context().cookies();
 }
 
 // Helper: Create and publish survey via API
@@ -115,6 +121,9 @@ async function createAndPublishSurvey(
   const verifiedSurvey = await verifyRes.json();
   expect(verifiedSurvey.title).toContain('E2E Public Survey');
   expect(verifiedSurvey.questions).toHaveLength(5);
+
+  // Track for cleanup
+  createdSurveyIds.push(surveyId);
 
   return { surveyId, slug };
 }
@@ -585,4 +594,21 @@ test('Print Public Survey Test Summary', async () => {
   console.log('- Edge cases (404, unpublished)');
   console.log('- Keyboard navigation');
   console.log('========================================\n');
+});
+
+// Cleanup all created surveys after all tests
+test.afterAll(async ({ request }) => {
+  const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const deletedIds = new Set<string>();
+  for (const surveyId of createdSurveyIds) {
+    try {
+      await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+        headers: { Cookie: cookieHeader },
+      });
+      deletedIds.add(surveyId);
+    } catch (e) {
+      console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+    }
+  }
+  createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
 });

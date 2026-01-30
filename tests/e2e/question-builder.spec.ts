@@ -1,8 +1,16 @@
 import { test, expect, Page } from '@playwright/test';
 
+// Configure serial mode to prevent parallel execution issues
+test.describe.configure({ mode: 'serial' });
+
 // Test credentials
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'test1234';
+
+// Track created surveys for cleanup
+let createdSurveyIds: string[] = [];
+let storedCookies: { name: string; value: string }[] = [];
+const BASE_URL = 'http://localhost:3000';
 
 // Helper to login
 async function login(page: Page) {
@@ -12,6 +20,8 @@ async function login(page: Page) {
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
   await page.waitForURL('/', { timeout: 15000 });
   await page.waitForTimeout(500);
+  // Store cookies for cleanup
+  storedCookies = await page.context().cookies();
 }
 
 // Helper to create a survey and navigate to edit page
@@ -27,6 +37,13 @@ async function createSurveyAndNavigateToEdit(page: Page): Promise<void> {
 
   await page.getByRole('button', { name: 'Create Survey' }).click();
   await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
+
+  // Extract survey ID from URL for cleanup tracking
+  const url = page.url();
+  const surveyIdMatch = url.match(/\/surveys\/([^/]+)\/edit/);
+  if (surveyIdMatch && surveyIdMatch[1]) {
+    createdSurveyIds.push(surveyIdMatch[1]);
+  }
 
   // Wait for survey context to load
   await surveyLoadPromise;
@@ -45,6 +62,22 @@ test.describe('Question Builder - UI Components', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await createSurveyAndNavigateToEdit(page);
+  });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
   });
 
   test('Question Type Picker dialog opens and displays all question types', async ({ page }) => {
@@ -99,6 +132,22 @@ test.describe('Question Builder - CRUD Operations', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await createSurveyAndNavigateToEdit(page);
+  });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
   });
 
   test('Add all 5 question types via UI', async ({ page }) => {

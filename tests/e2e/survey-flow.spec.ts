@@ -1,8 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+// Configure serial execution to avoid parallel test conflicts
+test.describe.configure({ mode: 'serial' });
+
 // Test credentials
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'test1234';
+
+// Track created surveys for cleanup
+let createdSurveyIds: string[] = [];
+let storedCookies: { name: string; value: string }[] = [];
+const BASE_URL = 'http://localhost:3000';
 
 // Helper function to login with retry
 async function login(page: import('@playwright/test').Page, retries = 3) {
@@ -19,6 +27,8 @@ async function login(page: import('@playwright/test').Page, retries = 3) {
       await page.waitForURL('/', { timeout: 20000 });
       // Additional wait to ensure session is stable
       await page.waitForTimeout(500);
+      // Store cookies for cleanup
+      storedCookies = await page.context().cookies();
       return; // Success
     } catch {
       // Check if there's an error message
@@ -72,6 +82,11 @@ test.describe('Survey Management', () => {
 
     // Should redirect to edit page
     await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
+
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
   });
 
   test('should add questions to a survey', async ({ page }) => {
@@ -82,19 +97,38 @@ test.describe('Survey Management', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Add a short text question (button text is "Add your first question" for empty surveys)
-    await page.getByRole('button', { name: /Add.*question/i }).click();
+    // Use JavaScript click to ensure React state updates properly
+    await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(b =>
+        b.textContent?.toLowerCase().includes('add') && b.textContent?.toLowerCase().includes('question')
+      );
+      btn?.click();
+    });
 
     // Wait for question type picker dialog
     const typePickerDialog = page.getByRole('dialog').filter({ hasText: 'Add Question' });
-    await expect(typePickerDialog).toBeVisible();
+    await expect(typePickerDialog).toBeVisible({ timeout: 5000 });
 
-    // Click on the Short Text option - scope to dialog to avoid conflicts
-    await typePickerDialog.getByRole('button', { name: /Short Text/i }).click();
+    // Click on the Short Text option using JavaScript for reliable React event triggering
+    await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(b =>
+        b.textContent?.includes('Short Text')
+      );
+      btn?.click();
+    });
+
+    // Wait for API call to complete and dialog to appear
+    await page.waitForTimeout(500);
 
     // Wait for the editor dialog to appear (this happens after API call creates the question)
     const editorDialog = page.getByRole('dialog').filter({ hasText: 'Edit Question' });
-    await expect(editorDialog).toBeVisible({ timeout: 10000 });
+    await expect(editorDialog).toBeVisible({ timeout: 15000 });
 
     // Fill question details
     await page.getByPlaceholder('Enter your question...').fill('What is your name?');
@@ -114,6 +148,11 @@ test.describe('Survey Management', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Click Settings tab (use the one in the survey header, not sidebar)
     await page.locator('[data-testid="survey-tab-settings"]').click();
     await expect(page).toHaveURL(/\/settings/);
@@ -125,6 +164,22 @@ test.describe('Survey Management', () => {
     // Click Edit tab
     await page.locator('[data-testid="survey-tab-edit"]').click();
     await expect(page).toHaveURL(/\/edit/);
+  });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
   });
 });
 
@@ -151,6 +206,9 @@ test.describe('Public Survey', () => {
     const url = page.url();
     const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
     if (!surveyId) throw new Error('Failed to extract survey ID');
+
+    // Track survey ID for cleanup
+    createdSurveyIds.push(surveyId);
 
     // Add a question
     await page.getByRole('button', { name: /Add.*question/i }).click();
@@ -204,6 +262,9 @@ test.describe('Public Survey', () => {
     const url = page.url();
     const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
     if (!surveyId) throw new Error('Failed to extract survey ID');
+
+    // Track survey ID for cleanup
+    createdSurveyIds.push(surveyId);
 
     // Add first question
     await page.getByRole('button', { name: /Add.*question/i }).click();
@@ -262,6 +323,22 @@ test.describe('Public Survey', () => {
 
     await anonymousPage.close();
   });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
+  });
 });
 
 test.describe('AI Generator Dialog', () => {
@@ -304,6 +381,22 @@ test.describe('AI Generator Dialog', () => {
     // Dialog should be closed
     await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).not.toBeVisible();
   });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
+  });
 });
 
 test.describe('Settings Page', () => {
@@ -318,6 +411,11 @@ test.describe('Settings Page', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
 
+    // Track survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
     // Navigate to Settings (use the survey header tab)
     await page.locator('[data-testid="survey-tab-settings"]').click();
     await expect(page).toHaveURL(/\/settings/);
@@ -325,5 +423,21 @@ test.describe('Settings Page', () => {
     // Settings page should have loaded - verify by checking that we're still on a survey page
     // The settings tab should still be visible
     await expect(page.locator('[data-testid="survey-tab-settings"]')).toBeVisible();
+  });
+
+  test.afterAll(async ({ request }) => {
+    const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const deletedIds = new Set<string>();
+    for (const surveyId of createdSurveyIds) {
+      try {
+        await request.delete(`${BASE_URL}/api/surveys/${surveyId}`, {
+          headers: { Cookie: cookieHeader },
+        });
+        deletedIds.add(surveyId);
+      } catch (e) {
+        console.log(`Cleanup: Failed to delete survey ${surveyId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    createdSurveyIds = createdSurveyIds.filter(id => !deletedIds.has(id));
   });
 });

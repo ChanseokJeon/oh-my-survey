@@ -1,5 +1,23 @@
 # Oh-My-Survey - Claude Code Instructions
 
+## CRITICAL SAFETY RULES (MUST ALWAYS FOLLOW)
+
+**DANGEROUS COMMANDS - ALWAYS ASK PERMISSION FIRST:**
+
+Before executing ANY of these commands, you MUST ask the user for explicit permission:
+
+- `rm -rf` - Recursive force delete (NEVER execute without permission)
+- `rm -r` - Recursive delete
+- `git reset --hard` - Discard all changes
+- `git clean -f` - Force clean untracked files
+- `DROP TABLE` / `DROP DATABASE` - Database deletion
+
+Example: "I need to delete the `data/pglite` directory. May I run `rm -rf data/pglite`?"
+
+**This rule has NO exceptions. Always ask first, even if it seems routine.**
+
+---
+
 ## Testing Guidelines
 
 **IMPORTANT: Always test headlessly or via API. Never use browser automation (MCP chrome tools).**

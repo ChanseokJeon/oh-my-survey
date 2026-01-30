@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { db, surveys, questions, responses } from "@/lib/db";
+import { db, surveys, questions, responses, ensureDbReady, currentProvider } from "@/lib/db";
+import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, and, asc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { submitResponseSchema } from "@/lib/validations/response";
@@ -8,6 +9,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  await ensureDbReady();
   const { slug } = await params;
 
   // Find published survey by slug
@@ -101,20 +103,39 @@ export async function POST(
     const ipAddress = forwardedFor?.split(",")[0] || realIp || null;
 
     // Save response
-    const [newResponse] = await db
-      .insert(responses)
-      .values({
-        surveyId: survey.id,
-        answersJson: answers as Record<string, string | string[] | number>,
-        ipAddress,
-      })
-      .returning();
+    let responseId: string;
+
+    // For PGlite, use raw SQL due to drizzle-orm compatibility issues
+    if (currentProvider === 'pglite') {
+      const pglite = getPGliteInstance();
+      if (!pglite) {
+        throw new Error('PGlite instance not available');
+      }
+      const result = await pglite.query(
+        `INSERT INTO responses (survey_id, answers_json, ip_address)
+         VALUES ($1, $2, $3)
+         RETURNING id`,
+        [survey.id, JSON.stringify(answers), ipAddress]
+      );
+      responseId = (result.rows[0] as { id: string }).id;
+    } else {
+      // PostgreSQL: use drizzle ORM
+      const [newResponse] = await db
+        .insert(responses)
+        .values({
+          surveyId: survey.id,
+          answersJson: answers as Record<string, string | string[] | number>,
+          ipAddress,
+        })
+        .returning();
+      responseId = newResponse.id;
+    }
 
     return NextResponse.json(
       {
         success: true,
         message: "Response submitted successfully",
-        responseId: newResponse.id,
+        responseId,
       },
       { status: 201 }
     );

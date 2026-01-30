@@ -673,7 +673,7 @@ describe('Questions API Integration Tests', () => {
 
       // Verify question is deleted
       const afterResponse = await authFetch(`/api/surveys/${testSurveyId}/questions`);
-      const { questions: after } = afterResponse.json();
+      const { questions: after } = await afterResponse.json();
       expect(after.length).toBe(initialCount - 1);
 
       // Verify deleted question doesn't exist

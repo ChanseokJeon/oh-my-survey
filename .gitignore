@@ -50,3 +50,6 @@ drizzle/meta
 # Playwright
 playwright-report/
 test-results/
+
+# PGlite local database
+data/pglite/

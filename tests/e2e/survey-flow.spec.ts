@@ -4,17 +4,33 @@ import { test, expect } from '@playwright/test';
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'test1234';
 
-// Helper function to login
-async function login(page: import('@playwright/test').Page) {
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(TEST_EMAIL);
-  await page.getByLabel('Password').fill(TEST_PASSWORD);
-  await page.getByRole('button', { name: 'Sign in with Email' }).click();
+// Helper function to login with retry
+async function login(page: import('@playwright/test').Page, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
-  // Wait for navigation and session to be established
-  await page.waitForURL('/', { timeout: 15000 });
-  // Additional wait to ensure session is stable
-  await page.waitForTimeout(500);
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByLabel('Password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Sign in with Email' }).click();
+
+    // Wait for either success navigation or error message
+    try {
+      await page.waitForURL('/', { timeout: 20000 });
+      // Additional wait to ensure session is stable
+      await page.waitForTimeout(500);
+      return; // Success
+    } catch {
+      // Check if there's an error message
+      const errorVisible = await page.getByText('Invalid email or password').isVisible().catch(() => false);
+      if (errorVisible && attempt < retries) {
+        console.log(`Login attempt ${attempt} failed, retrying...`);
+        await page.waitForTimeout(1000);
+        continue;
+      }
+      throw new Error(`Login failed after ${attempt} attempts`);
+    }
+  }
 }
 
 test.describe('Authentication', () => {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys } from "@/lib/db";
+import { db, surveys, ensureDbReady } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { google } from "googleapis";
 import { z } from "zod";
@@ -13,6 +13,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ surveyId: string }> }
 ) {
+  await ensureDbReady();
   // Require authentication
   const session = await auth();
   if (!session?.user?.id) {

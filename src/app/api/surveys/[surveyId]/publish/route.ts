@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions } from "@/lib/db";
+import { db, surveys, questions, ensureDbReady } from "@/lib/db";
 import { eq, and, count } from "drizzle-orm";
 import { publishSurveySchema } from "@/lib/validations/survey";
 
@@ -8,6 +8,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ surveyId: string }> }
 ) {
+  await ensureDbReady();
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -12,16 +12,26 @@ export async function loginAndGetCookies(
   email: string,
   password: string
 ): Promise<string> {
-  // First get CSRF token
+  // First get CSRF token and cookies
   const csrfResponse = await fetch(`${BASE_URL}/api/auth/csrf`);
   const csrfData = await csrfResponse.json();
   const csrfToken = csrfData.csrfToken;
 
-  // Use NextAuth credentials provider
+  // Extract cookies from CSRF response to send with login
+  const csrfCookies = csrfResponse.headers.get('set-cookie');
+  const cookieHeader = csrfCookies
+    ? csrfCookies
+        .split(/,(?=\s*\w+=)/)
+        .map((c) => c.split(';')[0].trim())
+        .join('; ')
+    : '';
+
+  // Use NextAuth credentials provider - must include CSRF cookies
   const response = await fetch(`${BASE_URL}/api/auth/callback/credentials`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...(cookieHeader && { Cookie: cookieHeader }),
     },
     body: new URLSearchParams({
       csrfToken,
@@ -36,8 +46,13 @@ export async function loginAndGetCookies(
     throw new Error('No cookies received from login');
   }
 
-  // Return just the session cookie
-  return cookies.split(';')[0];
+  // Extract session token from set-cookie header
+  const sessionMatch = cookies.match(/authjs\.session-token=([^;]+)/);
+  if (!sessionMatch) {
+    throw new Error('No session token in cookies');
+  }
+
+  return `authjs.session-token=${sessionMatch[1]}`;
 }
 
 /**

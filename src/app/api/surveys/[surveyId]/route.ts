@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses } from "@/lib/db";
+import { db, surveys, questions, responses, ensureDbReady } from "@/lib/db";
 import { eq, and, asc, count } from "drizzle-orm";
 import { updateSurveySchema } from "@/lib/validations/survey";
 
@@ -8,6 +8,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ surveyId: string }> }
 ) {
+  await ensureDbReady();
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,6 +47,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ surveyId: string }> }
 ) {
+  await ensureDbReady();
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -89,6 +91,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ surveyId: string }> }
 ) {
+  await ensureDbReady();
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

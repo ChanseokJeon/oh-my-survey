@@ -124,25 +124,22 @@ async function initializeSchema(client: PGlite) {
   console.log('[PGlite] Schema ready');
 }
 
-export function createPGliteDatabase(dataPath: string) {
-  // NOTE: PGlite has issues with Next.js 15 webpack bundling (URL path error)
-  // This is a known issue - for now, recommend using postgres provider for local dev
-  // See: https://github.com/electric-sql/pglite/issues
+export function createPGliteDatabase(_dataPath: string) {
+  // NOTE: Using in-memory mode to avoid multi-process file locking issues
+  // Next.js 15 dev mode runs RSC server and page renderer in separate processes
+  // File-based PGlite causes WASM crashes when multiple processes access same directory
 
   // Reuse existing instance (singleton pattern via globalThis)
   if (!globalForPGlite.pgliteInstance) {
-    console.log(`[PGlite] Creating NEW instance at: ${dataPath} (process.pid=${process.pid})`);
-    globalForPGlite.pgliteDataPath = dataPath;
-    // Use file-based persistence to survive hot reloads
-    globalForPGlite.pgliteInstance = new PGlite(dataPath);
+    console.log(`[PGlite] Creating NEW in-memory instance (process.pid=${process.pid})`);
+    globalForPGlite.pgliteDataPath = 'memory://';
+    // Use in-memory mode to avoid file locking conflicts
+    globalForPGlite.pgliteInstance = new PGlite();
 
     // Start schema initialization and track the promise
     globalForPGlite.pgliteInitPromise = initializeSchema(globalForPGlite.pgliteInstance);
   } else {
-    console.log(`[PGlite] Reusing existing instance at: ${globalForPGlite.pgliteDataPath} (requested: ${dataPath})`);
-    if (globalForPGlite.pgliteDataPath !== dataPath) {
-      console.warn(`[PGlite] Warning: Path mismatch!`);
-    }
+    console.log(`[PGlite] Reusing existing in-memory instance`);
   }
 
   return drizzle(globalForPGlite.pgliteInstance, { schema });

@@ -37,7 +37,7 @@ export async function GET(
     .where(eq(responses.surveyId, surveyId));
 
   return NextResponse.json({
-    ...survey,
+    survey,
     questions: surveyQuestions,
     responseCount: responseCount?.count ?? 0,
   });

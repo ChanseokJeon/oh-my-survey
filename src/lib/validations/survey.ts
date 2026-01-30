@@ -7,6 +7,7 @@ export const createSurveySchema = z.object({
 
 export const updateSurveySchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  status: z.enum(["draft", "published", "closed"]).optional(),
   theme: z.enum(["light", "dark", "minimal"]).optional(),
   logoBase64: z.string().nullable().optional(),
   sheetsConfig: z.object({

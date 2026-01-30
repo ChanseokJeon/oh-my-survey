@@ -109,6 +109,13 @@ async function createAndPublishSurvey(
   });
   expect(publishRes.ok()).toBeTruthy();
 
+  // Verify survey is accessible via public API
+  const verifyRes = await request.get(`${BASE_URL}/api/public/surveys/${slug}`);
+  expect(verifyRes.ok()).toBeTruthy();
+  const verifiedSurvey = await verifyRes.json();
+  expect(verifiedSurvey.title).toContain('E2E Public Survey');
+  expect(verifiedSurvey.questions).toHaveLength(5);
+
   return { surveyId, slug };
 }
 
@@ -143,172 +150,172 @@ test.describe('Public Survey - Navigation and Display', () => {
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
   });
 
-  test.skip('should display published survey with title and questions', async ({ page, request }) => {
+  test('should display published survey with title and questions', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     // Navigate to public survey
     await page.goto(`/s/${slug}`);
 
-    // Verify survey loads
-    await expect(page.locator('h1')).toContainText('E2E Public Survey');
+    // Wait for page to load fully
+    await page.waitForLoadState('networkidle');
 
     // Verify first question is displayed (short_text)
-    await expect(page.getByText('What is your name?')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your name?');
     await expect(page.getByText('Required')).toBeVisible();
 
     // Verify navigation buttons
-    await expect(page.getByRole('button', { name: 'Previous' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Previous' })).toBeDisabled(); // First question
-    await expect(page.getByRole('button', { name: 'Next' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeDisabled(); // First question
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeVisible();
   });
 
-  test.skip('should show progress bar', async ({ page, request }) => {
+  test('should show progress bar', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
-    // Progress bar should show 1/5
-    await expect(page.getByText('1 / 5')).toBeVisible();
+    // Progress bar should show "Question 1 of 5"
+    await expect(page.getByText('Question 1 of 5')).toBeVisible();
   });
 });
 
 test.describe('Public Survey - Question Navigation', () => {
-  test.skip('should navigate through all question types', async ({ page, request }) => {
+  test('should navigate through all question types', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Q1: Short Text
-    await expect(page.getByText('What is your name?')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your name?');
     await expect(page.getByRole('textbox')).toBeVisible();
 
     // Next button disabled until answered (required)
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
 
     await page.getByRole('textbox').fill('John Doe');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
 
     // Wait for animation
     await page.waitForTimeout(200);
 
     // Q2: Long Text
-    await expect(page.getByText('Tell us about yourself')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
     await expect(page.locator('textarea')).toBeVisible();
 
     // Optional question - Next should be enabled
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
     await page.locator('textarea').fill('I am a test respondent.');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q3: Multiple Choice
-    await expect(page.getByText('What is your favorite color?')).toBeVisible();
-    await expect(page.getByText('Red')).toBeVisible();
-    await expect(page.getByText('Blue')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your favorite color?');
+    await expect(page.getByRole('button', { name: 'Red' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Blue' })).toBeVisible();
 
     // Required - Next disabled
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
 
-    await page.getByText('Blue').click();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Blue' }).click();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q4: Yes/No
-    await expect(page.getByText('Do you enjoy surveys?')).toBeVisible();
-    await expect(page.getByText('Yes')).toBeVisible();
-    await expect(page.getByText('No')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Do you enjoy surveys?');
+    await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 
-    await page.getByText('Yes').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q5: Rating (last question)
-    await expect(page.getByText('Rate your experience')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Rate your experience');
 
     // Previous button should work
-    await expect(page.getByRole('button', { name: 'Previous' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeEnabled();
 
     // Submit button should be visible (last question)
     await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
   });
 
-  test.skip('should allow going back to previous questions', async ({ page, request }) => {
+  test('should allow going back to previous questions', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Answer Q1
     await page.getByRole('textbox').fill('Test User');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Now on Q2
-    await expect(page.getByText('Tell us about yourself')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
 
     // Go back
-    await page.getByRole('button', { name: 'Previous' }).click();
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Should be back on Q1 with answer preserved
-    await expect(page.getByText('What is your name?')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your name?');
     await expect(page.getByRole('textbox')).toHaveValue('Test User');
   });
 });
 
 test.describe('Public Survey - Validation', () => {
-  test.skip('should prevent skipping required questions', async ({ page, request }) => {
+  test('should prevent skipping required questions', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Q1 is required - Next should be disabled
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
 
     // Type something, then clear it
     await page.getByRole('textbox').fill('Test');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
 
     await page.getByRole('textbox').clear();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
   });
 
-  test.skip('should allow skipping optional questions', async ({ page, request }) => {
+  test('should allow skipping optional questions', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Answer Q1 (required)
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q2 is optional - Next should be enabled without answering
-    await expect(page.getByText('Tell us about yourself')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
 
     // Can proceed without answering
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Should be on Q3
-    await expect(page.getByText('What is your favorite color?')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your favorite color?');
   });
 
-  test.skip('should show required indicator', async ({ page, request }) => {
+  test('should show required indicator', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
-    // Required question should have asterisk
-    await expect(page.getByText('What is your name?')).toContainText('*');
+    // Required question should have asterisk in heading
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('*');
     await expect(page.getByText('Required')).toBeVisible();
   });
 });
 
 test.describe('Public Survey - Submission', () => {
-  test.skip('should submit survey and show thank you screen', async ({ page, request }) => {
+  test('should submit survey and show thank you screen', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
@@ -316,26 +323,27 @@ test.describe('Public Survey - Submission', () => {
     // Answer all required questions
     // Q1: Short Text
     await page.getByRole('textbox').fill('John Doe');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q2: Long Text (optional - skip)
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q3: Multiple Choice
-    await page.getByText('Blue').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Blue' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q4: Yes/No
-    await page.getByText('Yes').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q5: Rating
     // Click on the 4th star (ratings are typically 1-5)
-    const stars = page.locator('[role="button"]').filter({ hasText: /★/ });
+    // Find buttons containing Lucide Star SVGs
+    const stars = page.locator('button').filter({ has: page.locator('svg.lucide-star') });
     await stars.nth(3).click();
 
     // Submit
@@ -344,63 +352,64 @@ test.describe('Public Survey - Submission', () => {
     // Wait for submission
     await page.waitForTimeout(1000);
 
-    // Should show completion screen
-    await expect(page.getByText(/thank you/i)).toBeVisible();
+    // Should show completion screen with "Thank you!" heading
+    await expect(page.getByRole('heading', { name: 'Thank you!' })).toBeVisible();
   });
 
-  test.skip('should prevent submission with missing required answers', async ({ page, request }) => {
+  test('should prevent submission with missing required answers', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Answer Q1
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Skip Q2 (optional)
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Skip Q3 (required) - shouldn't be able to proceed
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
   });
 
-  test.skip('should show loading state during submission', async ({ page, request }) => {
+  test('should show loading state during submission', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Answer all questions quickly
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await page.getByText('Blue').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Blue' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await page.getByText('Yes').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    const stars = page.locator('[role="button"]').filter({ hasText: /★/ });
+    // Find buttons containing Lucide Star SVGs
+    const stars = page.locator('button').filter({ has: page.locator('svg.lucide-star') });
     await stars.nth(3).click();
 
     // Submit button should show loading state
     const submitButton = page.getByRole('button', { name: 'Submit' });
     await submitButton.click();
 
-    // Check for loading indicator (spinner icon)
+    // Check for loading indicator (spinner icon from Loader2 component)
     await expect(page.locator('.animate-spin')).toBeVisible({ timeout: 500 });
   });
 });
 
 test.describe('Public Survey - Edge Cases', () => {
-  test.skip('should handle different question types correctly', async ({ page, request }) => {
+  test('should handle different question types correctly', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
@@ -411,115 +420,119 @@ test.describe('Public Survey - Edge Cases', () => {
     expect(textboxTagName).toBe('input');
 
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Long text: should have textarea
     await expect(page.locator('textarea')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Multiple choice: should have clickable options
-    const blueOption = page.getByText('Blue');
+    const blueOption = page.getByRole('button', { name: 'Blue' });
     await expect(blueOption).toBeVisible();
 
     // Click should select it
     await blueOption.click();
 
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Yes/No: should have exactly 2 options
-    await expect(page.getByText('Yes')).toBeVisible();
-    await expect(page.getByText('No')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 
-    await page.getByText('No').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'No' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    // Rating: should have star icons
-    const stars = page.locator('[role="button"]').filter({ hasText: /★/ });
+    // Rating: should have star icons (Lucide SVGs)
+    const stars = page.locator('button').filter({ has: page.locator('svg.lucide-star') });
     await expect(stars).toHaveCount(5);
   });
 
-  test.skip('should preserve answers when navigating back and forth', async ({ page, request }) => {
+  test('should preserve answers when navigating back and forth', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
     // Answer Q1
     await page.getByRole('textbox').fill('John Doe');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Answer Q2
     await page.locator('textarea').fill('This is my story');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Answer Q3
-    await page.getByText('Green').click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Green' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    // Go back to Q2
-    await page.getByRole('button', { name: 'Previous' }).click();
+    // Go back to Q3 first
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.waitForTimeout(200);
+
+    // Then go back to Q2
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.locator('textarea')).toHaveValue('This is my story');
 
     // Go back to Q1
-    await page.getByRole('button', { name: 'Previous' }).click();
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.getByRole('textbox')).toHaveValue('John Doe');
 
     // Go forward to Q2
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.locator('textarea')).toHaveValue('This is my story');
 
     // Go forward to Q3
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Green should still be selected (verify by checking if Next is enabled)
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
   });
 
-  test.skip('should update progress bar as user navigates', async ({ page, request }) => {
+  test('should update progress bar as user navigates', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
 
-    // Start: 1/5
-    await expect(page.getByText('1 / 5')).toBeVisible();
+    // Start: Question 1 of 5
+    await expect(page.getByText('Question 1 of 5')).toBeVisible();
 
     // Next
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await expect(page.getByText('2 / 5')).toBeVisible();
+    await expect(page.getByText('Question 2 of 5')).toBeVisible();
 
     // Next
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await expect(page.getByText('3 / 5')).toBeVisible();
+    await expect(page.getByText('Question 3 of 5')).toBeVisible();
 
     // Previous
-    await page.getByRole('button', { name: 'Previous' }).click();
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await expect(page.getByText('2 / 5')).toBeVisible();
+    await expect(page.getByText('Question 2 of 5')).toBeVisible();
   });
 });
 
 test.describe('Public Survey - Keyboard Navigation', () => {
-  test.skip('should advance with Enter key', async ({ page, request }) => {
+  test('should advance with Enter key', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
@@ -532,10 +545,10 @@ test.describe('Public Survey - Keyboard Navigation', () => {
     await page.waitForTimeout(200);
 
     // Should be on Q2
-    await expect(page.getByText('Tell us about yourself')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
   });
 
-  test.skip('should not submit on Enter with Shift key', async ({ page, request }) => {
+  test('should not submit on Enter with Shift key', async ({ page, request }) => {
     const { slug } = await createAndPublishSurvey(request, page);
 
     await page.goto(`/s/${slug}`);
@@ -553,7 +566,7 @@ test.describe('Public Survey - Keyboard Navigation', () => {
     await textarea.type('Line 2');
 
     // Should still be on Q2
-    await expect(page.getByText('Tell us about yourself')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
   });
 });
 

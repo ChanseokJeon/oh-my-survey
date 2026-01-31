@@ -22,7 +22,8 @@ async function login(page: Page) {
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
   await page.waitForURL('/', { timeout: 15000 });
-  await page.waitForTimeout(500);
+  // Wait for dashboard to fully load
+  await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible({ timeout: 15000 });
   // Store cookies for cleanup
   storedCookies = await page.context().cookies();
 }

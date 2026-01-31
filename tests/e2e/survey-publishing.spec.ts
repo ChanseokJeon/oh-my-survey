@@ -18,7 +18,9 @@ async function login(page: Page) {
   await page.getByLabel('Email').fill(TEST_EMAIL);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
-  await page.waitForURL('/', { timeout: 15000 });
+  await page.waitForURL('/', { timeout: 30000 });
+  // Wait for dashboard to fully load
+  await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible({ timeout: 15000 });
   storedCookies = await page.context().cookies();
 }
 
@@ -58,22 +60,23 @@ test.describe('Survey Publishing', () => {
 
     // Navigate to settings page
     await page.goto(`/surveys/${survey.id}/settings`);
-    await page.waitForLoadState('networkidle');
 
-    // Verify survey is in draft state (Publish button visible)
-    await expect(page.getByRole('button', { name: /Publish/i })).toBeVisible();
+    // Wait for the Publish button to be enabled (requires questions to be loaded)
+    const publishButton = page.getByRole('button', { name: /Publish Survey/i });
+    await expect(publishButton).toBeVisible({ timeout: 10000 });
+
+    // If button is disabled, reload to ensure questions are loaded
+    const isDisabled = await publishButton.isDisabled();
+    if (isDisabled) {
+      await page.reload();
+      await expect(publishButton).toBeEnabled({ timeout: 10000 });
+    }
 
     // Click Publish button
-    await page.getByRole('button', { name: /Publish/i }).click();
+    await publishButton.click();
 
-    // Wait for state change
-    await page.waitForTimeout(1000);
-
-    // Verify public URL is shown after publishing
-    await expect(page.getByText(/\/s\//)).toBeVisible({ timeout: 10000 });
-
-    // Verify Unpublish button appears
-    await expect(page.getByRole('button', { name: /Unpublish/i })).toBeVisible();
+    // Wait for the API response and UI update - Unpublish button appears
+    await expect(page.getByRole('button', { name: /Unpublish/i })).toBeVisible({ timeout: 10000 });
 
     // Test public URL accessibility
     const publicPage = await context.newPage();

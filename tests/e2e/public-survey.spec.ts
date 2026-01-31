@@ -18,14 +18,35 @@ const TEST_PASSWORD = 'test1234';
 let createdSurveyIds: string[] = [];
 let storedCookies: { name: string; value: string }[] = [];
 
+// Helper: Retry API calls to handle transient network errors
+async function retryApiCall<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 500
+): Promise<T> {
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // Helper: Login to get session
 async function loginAndGetSession(page: Page) {
   await page.goto('/login');
   await page.getByLabel('Email').fill(TEST_EMAIL);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
-  await page.waitForURL('/', { timeout: 15000 });
-  await page.waitForTimeout(500);
+  await page.waitForURL('/', { timeout: 30000 });
+  // Wait for dashboard to fully load
+  await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible({ timeout: 15000 });
   // Store cookies for cleanup
   storedCookies = await page.context().cookies();
 }
@@ -39,18 +60,20 @@ async function createAndPublishSurvey(
   await loginAndGetSession(page);
   const cookies = await page.context().cookies();
 
-  // Create survey
+  // Create survey with retry for transient network errors
   const surveyTitle = `E2E Public Survey ${Date.now()}`;
-  const createRes = await request.post(`${BASE_URL}/api/surveys`, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
-    },
-    data: {
-      title: surveyTitle,
-      theme: 'light',
-    },
-  });
+  const createRes = await retryApiCall(() =>
+    request.post(`${BASE_URL}/api/surveys`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
+      },
+      data: {
+        title: surveyTitle,
+        theme: 'light',
+      },
+    })
+  );
 
   expect(createRes.ok()).toBeTruthy();
   const surveyData = await createRes.json();
@@ -93,26 +116,30 @@ async function createAndPublishSurvey(
   ];
 
   for (const q of questionTypes) {
-    const qRes = await request.post(`${BASE_URL}/api/surveys/${surveyId}/questions`, {
+    const qRes = await retryApiCall(() =>
+      request.post(`${BASE_URL}/api/surveys/${surveyId}/questions`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
+        },
+        data: q,
+      })
+    );
+    expect(qRes.ok()).toBeTruthy();
+  }
+
+  // Publish survey with retry
+  const publishRes = await retryApiCall(() =>
+    request.patch(`${BASE_URL}/api/surveys/${surveyId}`, {
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
       },
-      data: q,
-    });
-    expect(qRes.ok()).toBeTruthy();
-  }
-
-  // Publish survey
-  const publishRes = await request.patch(`${BASE_URL}/api/surveys/${surveyId}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookies.map(c => `${c.name}=${c.value}`).join('; '),
-    },
-    data: {
-      status: 'published',
-    },
-  });
+      data: {
+        status: 'published',
+      },
+    })
+  );
   expect(publishRes.ok()).toBeTruthy();
 
   // Verify survey is accessible via public API
@@ -355,14 +382,18 @@ test.describe('Public Survey - Submission', () => {
     const stars = page.locator('button').filter({ has: page.locator('svg.lucide-star') });
     await stars.nth(3).click();
 
-    // Submit
-    await page.getByRole('button', { name: '제출' }).click();
-
-    // Wait for submission
-    await page.waitForTimeout(1000);
+    // Submit and wait for API response
+    await Promise.all([
+      page.waitForResponse(resp =>
+        resp.url().includes('/api/public/surveys/') &&
+        resp.url().includes('/responses') &&
+        resp.request().method() === 'POST'
+      ),
+      page.getByRole('button', { name: '제출' }).click()
+    ]);
 
     // Should show completion screen with "Thank you!" heading
-    await expect(page.getByRole('heading', { name: '감사합니다!' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '감사합니다!' })).toBeVisible({ timeout: 10000 });
   });
 
   test('should prevent submission with missing required answers', async ({ page, request }) => {

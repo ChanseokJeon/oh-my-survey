@@ -1,11 +1,39 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses, ensureDbReady, currentProvider } from "@/lib/db";
+import { db, surveys, questions, responses, users, ensureDbReady, currentProvider } from "@/lib/db";
 import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, desc, count } from "drizzle-orm";
 import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
 import { handleApiError } from "@/lib/utils/api-error";
+
+// Helper: Ensure user exists in PGlite (handles multi-process isolation issue)
+async function ensureUserExistsPGlite(userId: string, email: string | null | undefined): Promise<boolean> {
+  const pglite = getPGliteInstance();
+  if (!pglite) return false;
+
+  // Check if user exists
+  const existingResult = await pglite.query(
+    `SELECT id FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+
+  if (existingResult.rows.length > 0) {
+    return true;
+  }
+
+  // User doesn't exist in this process's DB - create them if we have email
+  if (email) {
+    console.log('[API] User not found in PGlite instance, creating:', userId);
+    await pglite.query(
+      `INSERT INTO users (id, email, name) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+      [userId, email, email.split("@")[0]]
+    );
+    return true;
+  }
+
+  return false;
+}
 
 export async function GET() {
   const session = await auth();
@@ -72,6 +100,16 @@ export async function POST(request: Request) {
       if (!pglite) {
         throw new Error('PGlite instance not available');
       }
+
+      // Ensure user exists in this PGlite instance (handles multi-process isolation)
+      const userExists = await ensureUserExistsPGlite(session.user.id, session.user.email);
+      if (!userExists) {
+        return NextResponse.json(
+          { error: "Session invalid. Please refresh the page and try again." },
+          { status: 401 }
+        );
+      }
+
       const result = await pglite.query(
         `INSERT INTO surveys (user_id, title, slug, theme, language)
          VALUES ($1, $2, $3, $4, $5)

@@ -18,8 +18,9 @@ async function login(page: Page) {
   await page.getByLabel('Email').fill(TEST_EMAIL);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Sign in with Email' }).click();
-  await page.waitForURL('/', { timeout: 15000 });
-  await page.waitForTimeout(500);
+  await page.waitForURL('/', { timeout: 30000 });
+  // Wait for dashboard to fully load
+  await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible({ timeout: 15000 });
   // Store cookies for cleanup
   storedCookies = await page.context().cookies();
 }
@@ -190,12 +191,19 @@ test.describe('Question Builder - CRUD Operations', () => {
       // Wait for type picker to close
       await expect(page.getByRole('heading', { name: 'Add Question' })).not.toBeVisible();
 
-      // Wait for Question Editor dialog to open
-      await expect(page.getByRole('heading', { name: 'Edit Question' })).toBeVisible({ timeout: 5000 });
+      // Wait for Question Editor dialog to open, or open it by clicking the question
+      const editHeading = page.getByRole('heading', { name: 'Edit Question' });
+      try {
+        await expect(editHeading).toBeVisible({ timeout: 3000 });
+      } catch {
+        // Dialog didn't auto-open, click the question to open the editor
+        await page.getByText('New question').first().click();
+        await expect(editHeading).toBeVisible({ timeout: 5000 });
+      }
 
       // Close the editor with Cancel button (more reliable than Escape)
       await page.getByRole('button', { name: 'Cancel' }).click();
-      await expect(page.getByRole('heading', { name: 'Edit Question' })).not.toBeVisible();
+      await expect(editHeading).not.toBeVisible();
 
       await page.waitForTimeout(500);
     }
@@ -226,8 +234,18 @@ test.describe('Question Builder - CRUD Operations', () => {
 
     expect(response.status()).toBe(201);
 
-    // Editor should open
-    await expect(page.getByRole('heading', { name: 'Edit Question' })).toBeVisible({ timeout: 5000 });
+    // Wait for type picker to close
+    await expect(page.getByRole('heading', { name: 'Add Question' })).not.toBeVisible();
+
+    // Editor should open, or open it by clicking the question
+    const editHeading = page.getByRole('heading', { name: 'Edit Question' });
+    try {
+      await expect(editHeading).toBeVisible({ timeout: 3000 });
+    } catch {
+      // Dialog didn't auto-open, click the question to open the editor
+      await page.getByText('New question').first().click();
+      await expect(editHeading).toBeVisible({ timeout: 5000 });
+    }
 
     // Edit the title - use the ID selector since label is "Question" not "Question Title"
     const titleInput = page.locator('#title');

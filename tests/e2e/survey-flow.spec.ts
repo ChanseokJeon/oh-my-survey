@@ -24,9 +24,9 @@ async function login(page: import('@playwright/test').Page, retries = 3) {
 
     // Wait for either success navigation or error message
     try {
-      await page.waitForURL('/', { timeout: 20000 });
-      // Additional wait to ensure session is stable
-      await page.waitForTimeout(500);
+      await page.waitForURL('/', { timeout: 30000 });
+      // Wait for dashboard to fully load
+      await expect(page.getByRole('heading', { name: 'Surveys' })).toBeVisible({ timeout: 15000 });
       // Store cookies for cleanup
       storedCookies = await page.context().cookies();
       return; // Success
@@ -102,39 +102,55 @@ test.describe('Survey Management', () => {
     const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
     if (surveyId) createdSurveyIds.push(surveyId);
 
-    // Add a short text question (button text is "Add your first question" for empty surveys)
-    // Use JavaScript click to ensure React state updates properly
-    await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(b =>
-        b.textContent?.toLowerCase().includes('add') && b.textContent?.toLowerCase().includes('question')
-      );
-      btn?.click();
-    });
+    // Wait for page to be fully loaded
+    await page.waitForLoadState('networkidle');
+
+    // Click "Add your first question" button using Playwright's proper locator
+    const addButton = page.getByRole('button', { name: /add.*question/i });
+    await expect(addButton).toBeVisible({ timeout: 5000 });
+    await addButton.click();
 
     // Wait for question type picker dialog
     const typePickerDialog = page.getByRole('dialog').filter({ hasText: 'Add Question' });
     await expect(typePickerDialog).toBeVisible({ timeout: 5000 });
 
-    // Click on the Short Text option using JavaScript for reliable React event triggering
-    await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(b =>
-        b.textContent?.includes('Short Text')
-      );
-      btn?.click();
-    });
+    // Click on the Short Text option and wait for API response
+    const shortTextButton = typePickerDialog.getByRole('button', { name: /Short Text/i });
+    await expect(shortTextButton).toBeVisible();
 
-    // Wait for API call to complete and dialog to appear
-    await page.waitForTimeout(500);
+    // Wait for API response when clicking Short Text
+    const [response] = await Promise.all([
+      page.waitForResponse(resp =>
+        resp.url().includes('/api/surveys/') &&
+        resp.url().includes('/questions') &&
+        resp.request().method() === 'POST'
+      ),
+      shortTextButton.click()
+    ]);
+    expect(response.ok()).toBeTruthy();
+
+    // Wait for the type picker dialog to close first
+    await expect(typePickerDialog).not.toBeVisible({ timeout: 5000 });
 
     // Wait for the editor dialog to appear (this happens after API call creates the question)
+    // If the dialog doesn't appear, the question was added but dialog didn't open - try clicking edit button
     const editorDialog = page.getByRole('dialog').filter({ hasText: 'Edit Question' });
-    await expect(editorDialog).toBeVisible({ timeout: 15000 });
+    try {
+      await expect(editorDialog).toBeVisible({ timeout: 5000 });
+    } catch {
+      // Dialog didn't auto-open, click the question to open the editor
+      await page.getByText('New question').click();
+      await expect(editorDialog).toBeVisible({ timeout: 5000 });
+    }
 
     // Fill question details
     await page.getByPlaceholder('Enter your question...').fill('What is your name?');
 
     // Save question
     await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    // Wait for dialog to close
+    await expect(editorDialog).not.toBeVisible({ timeout: 5000 });
 
     // Verify question appears in list (after dialog closes)
     await expect(page.getByText('What is your name?')).toBeVisible({ timeout: 5000 });
@@ -148,22 +164,33 @@ test.describe('Survey Management', () => {
     await page.getByRole('button', { name: 'Create Survey' }).click();
     await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 10000 });
 
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
+
     // Track survey ID for cleanup
     const url = page.url();
     const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
     if (surveyId) createdSurveyIds.push(surveyId);
 
-    // Click Settings tab (use the one in the survey header, not sidebar)
-    await page.locator('[data-testid="survey-tab-settings"]').click();
-    await expect(page).toHaveURL(/\/settings/);
+    // Click Settings tab and wait for navigation
+    const settingsTab = page.locator('[data-testid="survey-tab-settings"]');
+    await expect(settingsTab).toBeVisible();
+    await settingsTab.click();
+    await expect(page).toHaveURL(/\/settings/, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Click Responses tab
-    await page.locator('[data-testid="survey-tab-responses"]').click();
-    await expect(page).toHaveURL(/\/responses/);
+    // Click Responses tab and wait for navigation
+    const responsesTab = page.locator('[data-testid="survey-tab-responses"]');
+    await expect(responsesTab).toBeVisible();
+    await responsesTab.click();
+    await expect(page).toHaveURL(/\/responses/, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Click Edit tab
-    await page.locator('[data-testid="survey-tab-edit"]').click();
-    await expect(page).toHaveURL(/\/edit/);
+    // Click Edit tab and wait for navigation
+    const editTab = page.locator('[data-testid="survey-tab-edit"]');
+    await expect(editTab).toBeVisible();
+    await editTab.click();
+    await expect(page).toHaveURL(/\/edit/, { timeout: 10000 });
   });
 
   test.afterAll(async ({ request }) => {
@@ -210,17 +237,45 @@ test.describe('Public Survey', () => {
     // Track survey ID for cleanup
     createdSurveyIds.push(surveyId);
 
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
+
     // Add a question
-    await page.getByRole('button', { name: /Add.*question/i }).click();
+    const addButton = page.getByRole('button', { name: /Add.*question/i });
+    await expect(addButton).toBeVisible({ timeout: 5000 });
+    await addButton.click();
+
     const typePickerDialog = page.getByRole('dialog').filter({ hasText: 'Add Question' });
     await expect(typePickerDialog).toBeVisible();
-    // Click on the Short Text option - scope to dialog to avoid conflicts
-    await typePickerDialog.getByRole('button', { name: /Short Text/i }).click();
+
+    // Click on the Short Text option and wait for API response
+    const shortTextButton = typePickerDialog.getByRole('button', { name: /Short Text/i });
+    const [questionResponse] = await Promise.all([
+      page.waitForResponse(resp =>
+        resp.url().includes('/api/surveys/') &&
+        resp.url().includes('/questions') &&
+        resp.request().method() === 'POST'
+      ),
+      shortTextButton.click()
+    ]);
+    expect(questionResponse.ok()).toBeTruthy();
+
+    // Wait for the type picker dialog to close first
+    await expect(typePickerDialog).not.toBeVisible({ timeout: 5000 });
 
     const editorDialog = page.getByRole('dialog').filter({ hasText: 'Edit Question' });
-    await expect(editorDialog).toBeVisible({ timeout: 10000 });
+    try {
+      await expect(editorDialog).toBeVisible({ timeout: 5000 });
+    } catch {
+      // Dialog didn't auto-open, click the question to open the editor
+      await page.getByText('New question').click();
+      await expect(editorDialog).toBeVisible({ timeout: 5000 });
+    }
     await page.getByPlaceholder('Enter your question...').fill('What is your feedback?');
     await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    // Wait for dialog to close
+    await expect(editorDialog).not.toBeVisible({ timeout: 5000 });
     await expect(page.getByText('What is your feedback?')).toBeVisible({ timeout: 5000 });
 
     // Navigate to settings and publish

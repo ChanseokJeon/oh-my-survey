@@ -1,0 +1,7 @@
+{
+  "active": true,
+  "started_at": "2026-01-31T11:06:02.124Z",
+  "original_prompt": "create survey를 누르면 왜 아무 동작을 안하는가? 의도한건가? ux 적으로 맞지 않은데 버그 인건지 확인해. ulw!",
+  "reinforcement_count": 3,
+  "last_checked_at": "2026-01-31T11:33:21.744Z"
+}

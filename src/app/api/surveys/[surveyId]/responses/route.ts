@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, responses, ensureDbReady } from "@/lib/db";
 import { eq, desc, count } from "drizzle-orm";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 export async function GET(
   request: Request,
@@ -21,7 +22,8 @@ export async function GET(
   const offset = (page - 1) * limit;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }

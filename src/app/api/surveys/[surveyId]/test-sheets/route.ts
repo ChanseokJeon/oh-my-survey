@@ -4,6 +4,7 @@ import { ensureDbReady } from "@/lib/db";
 import { google } from "googleapis";
 import { z } from "zod";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 const testSheetsSchema = z.object({
   spreadsheetId: z.string().min(1, "Spreadsheet ID is required"),
@@ -23,7 +24,8 @@ export async function POST(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });

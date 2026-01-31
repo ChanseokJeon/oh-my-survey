@@ -5,6 +5,7 @@ import { eq, and, inArray, asc } from "drizzle-orm";
 import { reorderQuestionsSchema } from "@/lib/validations/question";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
 import { handleApiError } from "@/lib/utils/api-error";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 export async function PATCH(
   request: Request,
@@ -19,7 +20,8 @@ export async function PATCH(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }

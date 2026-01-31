@@ -4,6 +4,7 @@ import { db, questions, responses, ensureDbReady } from "@/lib/db";
 import { eq, asc } from "drizzle-orm";
 import { buildResponseHeaders, buildResponseRows } from "@/lib/utils/response-formatter";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 function escapeCSV(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
@@ -25,7 +26,8 @@ export async function GET(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });

@@ -1,54 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses, users, ensureDbReady, currentProvider } from "@/lib/db";
+import { db, surveys, questions, responses, ensureDbReady, currentProvider } from "@/lib/db";
 import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, desc, count } from "drizzle-orm";
 import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
 import { handleApiError } from "@/lib/utils/api-error";
-
-// Helper: Ensure user exists in PGlite and return the actual user ID to use
-// Returns the user ID to use for operations (may differ from session ID in edge cases)
-async function ensureUserExistsPGlite(userId: string, email: string | null | undefined): Promise<string | null> {
-  const pglite = getPGliteInstance();
-  if (!pglite) return null;
-
-  // Check if user exists by ID
-  const existingById = await pglite.query(
-    `SELECT id FROM users WHERE id = $1 LIMIT 1`,
-    [userId]
-  );
-
-  if (existingById.rows.length > 0) {
-    return userId;
-  }
-
-  // User doesn't exist by ID - check if email already exists
-  if (email) {
-    const existingByEmail = await pglite.query<{ id: string }>(
-      `SELECT id FROM users WHERE email = $1 LIMIT 1`,
-      [email]
-    );
-
-    if (existingByEmail.rows.length > 0) {
-      // Email exists with different ID - use the EXISTING user ID
-      // Don't update the user ID as it may have FK references
-      const existingUserId = existingByEmail.rows[0].id;
-      console.log('[API] User email exists with different ID, using existing:', existingUserId);
-      return existingUserId;
-    }
-
-    // Neither ID nor email exists - create new user
-    console.log('[API] User not found in PGlite instance, creating:', userId);
-    await pglite.query(
-      `INSERT INTO users (id, email, name) VALUES ($1, $2, $3)`,
-      [userId, email, email.split("@")[0]]
-    );
-    return userId;
-  }
-
-  return null;
-}
+import { resolveUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 export async function GET() {
   const session = await auth();
@@ -118,7 +76,7 @@ export async function POST(request: Request) {
 
       // Ensure user exists in this PGlite instance (handles multi-process isolation)
       // Returns the actual user ID to use (may differ from session ID if email already exists)
-      const actualUserId = await ensureUserExistsPGlite(session.user.id, session.user.email);
+      const actualUserId = await resolveUserIdForPGlite(session.user.id, session.user.email);
       if (!actualUserId) {
         return NextResponse.json(
           { error: "Session invalid. Please refresh the page and try again." },

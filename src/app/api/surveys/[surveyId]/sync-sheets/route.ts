@@ -7,6 +7,7 @@ import { z } from "zod";
 import { buildResponseHeaders, buildResponseRows } from "@/lib/utils/response-formatter";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
 import { handleApiError } from "@/lib/utils/api-error";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 const syncSheetsSchema = z.object({
   spreadsheetId: z.string().optional(),
@@ -26,7 +27,8 @@ export async function POST(
   const { surveyId } = await params;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
 
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });

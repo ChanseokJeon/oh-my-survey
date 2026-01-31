@@ -173,9 +173,9 @@ test.describe('Public Survey - Navigation and Display', () => {
     await expect(page.getByText('Required')).toBeVisible();
 
     // Verify navigation buttons
-    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeDisabled(); // First question
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '이전', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '이전', exact: true })).toBeDisabled(); // First question
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeVisible();
   });
 
   test('should show progress bar', async ({ page, request }) => {
@@ -199,11 +199,11 @@ test.describe('Public Survey - Question Navigation', () => {
     await expect(page.getByRole('textbox')).toBeVisible();
 
     // Next button disabled until answered (required)
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
 
     await page.getByRole('textbox').fill('John Doe');
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
 
     // Wait for animation
     await page.waitForTimeout(200);
@@ -213,9 +213,9 @@ test.describe('Public Survey - Question Navigation', () => {
     await expect(page.locator('textarea')).toBeVisible();
 
     // Optional question - Next should be enabled
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
     await page.locator('textarea').fill('I am a test respondent.');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q3: Multiple Choice
@@ -224,11 +224,11 @@ test.describe('Public Survey - Question Navigation', () => {
     await expect(page.getByRole('button', { name: 'Blue' })).toBeVisible();
 
     // Required - Next disabled
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
 
     await page.getByRole('button', { name: 'Blue' }).click();
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q4: Yes/No
@@ -237,17 +237,17 @@ test.describe('Public Survey - Question Navigation', () => {
     await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Yes' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q5: Rating (last question)
     await expect(page.getByRole('heading', { level: 2 })).toContainText('Rate your experience');
 
     // Previous button should work
-    await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '이전', exact: true })).toBeEnabled();
 
     // Submit button should be visible (last question)
-    await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '제출' })).toBeVisible();
   });
 
   test('should allow going back to previous questions', async ({ page, request }) => {
@@ -257,14 +257,14 @@ test.describe('Public Survey - Question Navigation', () => {
 
     // Answer Q1
     await page.getByRole('textbox').fill('Test User');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Now on Q2
     await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
 
     // Go back
-    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.getByRole('button', { name: '이전', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Should be back on Q1 with answer preserved
@@ -280,14 +280,14 @@ test.describe('Public Survey - Validation', () => {
     await page.goto(`/s/${slug}`);
 
     // Q1 is required - Next should be disabled
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
 
     // Type something, then clear it
     await page.getByRole('textbox').fill('Test');
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
 
     await page.getByRole('textbox').clear();
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
   });
 
   test('should allow skipping optional questions', async ({ page, request }) => {
@@ -297,15 +297,15 @@ test.describe('Public Survey - Validation', () => {
 
     // Answer Q1 (required)
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q2 is optional - Next should be enabled without answering
     await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
 
     // Can proceed without answering
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Should be on Q3
@@ -332,21 +332,21 @@ test.describe('Public Survey - Submission', () => {
     // Answer all required questions
     // Q1: Short Text
     await page.getByRole('textbox').fill('John Doe');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q2: Long Text (optional - skip)
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q3: Multiple Choice
     await page.getByRole('button', { name: 'Blue' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q4: Yes/No
     await page.getByRole('button', { name: 'Yes' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Q5: Rating
@@ -356,13 +356,13 @@ test.describe('Public Survey - Submission', () => {
     await stars.nth(3).click();
 
     // Submit
-    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('button', { name: '제출' }).click();
 
     // Wait for submission
     await page.waitForTimeout(1000);
 
     // Should show completion screen with "Thank you!" heading
-    await expect(page.getByRole('heading', { name: 'Thank you!' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '감사합니다!' })).toBeVisible();
   });
 
   test('should prevent submission with missing required answers', async ({ page, request }) => {
@@ -372,15 +372,15 @@ test.describe('Public Survey - Submission', () => {
 
     // Answer Q1
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Skip Q2 (optional)
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Skip Q3 (required) - shouldn't be able to proceed
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
   });
 
   test('should show loading state during submission', async ({ page, request }) => {
@@ -390,18 +390,18 @@ test.describe('Public Survey - Submission', () => {
 
     // Answer all questions quickly
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     await page.getByRole('button', { name: 'Blue' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     await page.getByRole('button', { name: 'Yes' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Find buttons containing Lucide Star SVGs
@@ -409,7 +409,7 @@ test.describe('Public Survey - Submission', () => {
     await stars.nth(3).click();
 
     // Submit button should show loading state
-    const submitButton = page.getByRole('button', { name: 'Submit' });
+    const submitButton = page.getByRole('button', { name: '제출' });
     await submitButton.click();
 
     // Check for loading indicator (spinner icon from Loader2 component)
@@ -429,13 +429,13 @@ test.describe('Public Survey - Edge Cases', () => {
     expect(textboxTagName).toBe('input');
 
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Long text: should have textarea
     await expect(page.locator('textarea')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Multiple choice: should have clickable options
@@ -445,7 +445,7 @@ test.describe('Public Survey - Edge Cases', () => {
     // Click should select it
     await blueOption.click();
 
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Yes/No: should have exactly 2 options
@@ -453,7 +453,7 @@ test.describe('Public Survey - Edge Cases', () => {
     await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 
     await page.getByRole('button', { name: 'No' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Rating: should have star icons (Lucide SVGs)
@@ -468,47 +468,47 @@ test.describe('Public Survey - Edge Cases', () => {
 
     // Answer Q1
     await page.getByRole('textbox').fill('John Doe');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Answer Q2
     await page.locator('textarea').fill('This is my story');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Answer Q3
     await page.getByRole('button', { name: 'Green' }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Go back to Q3 first
-    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.getByRole('button', { name: '이전', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Then go back to Q2
-    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.getByRole('button', { name: '이전', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.locator('textarea')).toHaveValue('This is my story');
 
     // Go back to Q1
-    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.getByRole('button', { name: '이전', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.getByRole('textbox')).toHaveValue('John Doe');
 
     // Go forward to Q2
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.locator('textarea')).toHaveValue('This is my story');
 
     // Go forward to Q3
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     // Green should still be selected (verify by checking if Next is enabled)
-    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
   });
 
   test('should update progress bar as user navigates', async ({ page, request }) => {
@@ -521,19 +521,19 @@ test.describe('Public Survey - Edge Cases', () => {
 
     // Next
     await page.getByRole('textbox').fill('Test');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.getByText('Question 2 of 5')).toBeVisible();
 
     // Next
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.getByRole('button', { name: '다음', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.getByText('Question 3 of 5')).toBeVisible();
 
     // Previous
-    await page.getByRole('button', { name: 'Previous', exact: true }).click();
+    await page.getByRole('button', { name: '이전', exact: true }).click();
     await page.waitForTimeout(200);
 
     await expect(page.getByText('Question 2 of 5')).toBeVisible();

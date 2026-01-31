@@ -310,15 +310,15 @@ test.describe('Public Survey', () => {
     // Should see first question
     await expect(anonymousPage.getByRole('heading', { name: 'Question 1' })).toBeVisible({ timeout: 10000 });
 
-    // Fill answer and click Next
+    // Fill answer and click Next (Korean label: 다음)
     await anonymousPage.getByRole('textbox').fill('My answer');
-    await anonymousPage.getByRole('button', { name: 'Next', exact: true }).click();
+    await anonymousPage.getByRole('button', { name: '다음', exact: true }).click();
 
     // Should see second question
     await expect(anonymousPage.getByRole('heading', { name: 'Question 2' })).toBeVisible({ timeout: 5000 });
 
-    // Should be able to go back
-    await anonymousPage.getByRole('button', { name: 'Previous', exact: true }).click();
+    // Should be able to go back (Korean label: 이전)
+    await anonymousPage.getByRole('button', { name: '이전', exact: true }).click();
     await expect(anonymousPage.getByRole('heading', { name: 'Question 1' })).toBeVisible();
 
     await anonymousPage.close();

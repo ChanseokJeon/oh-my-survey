@@ -7,7 +7,7 @@ const GenerateRequestSchema = z.object({
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
-    .max(2000, "Description must not exceed 2000 characters"),
+    .max(10000, "Description must not exceed 10,000 characters"),
 });
 
 export async function POST(request: NextRequest) {

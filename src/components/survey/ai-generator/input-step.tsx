@@ -44,7 +44,7 @@ export function InputStep({
           placeholder="E.g., A customer feedback survey for a coffee shop that measures satisfaction with service quality, product variety, and overall experience..."
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          maxLength={2000}
+          maxLength={10000}
           className="min-h-[120px]"
           disabled={isLoading}
         />

@@ -7,6 +7,7 @@ interface SurveyData {
   title: string;
   theme: "light" | "dark" | "minimal";
   logoBase64: string | null;
+  language: "en" | "ko";
   questions: Array<{
     id: string;
     type: "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating";

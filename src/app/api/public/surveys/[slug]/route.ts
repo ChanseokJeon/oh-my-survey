@@ -18,6 +18,7 @@ export async function GET(
       id: surveys.id,
       title: surveys.title,
       theme: surveys.theme,
+      language: surveys.language,
       logoBase64: surveys.logoBase64,
       status: surveys.status,
       userId: surveys.userId,
@@ -61,6 +62,7 @@ export async function GET(
     id: survey.id,
     title: survey.title,
     theme: survey.theme,
+    language: survey.language,
     logoBase64: survey.logoBase64,
     questions: surveyQuestions,
   });

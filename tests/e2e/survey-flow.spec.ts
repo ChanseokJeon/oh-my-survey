@@ -348,7 +348,7 @@ test.describe('AI Generator Dialog', () => {
 
   test('should open AI generator dialog from dashboard', async ({ page }) => {
     // Click Generate with AI button
-    await page.getByRole('button', { name: 'Generate with AI' }).click();
+    await page.getByRole('button', { name: 'Generate with AI' }).first().click();
 
     // Dialog should open
     await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).toBeVisible();
@@ -358,7 +358,7 @@ test.describe('AI Generator Dialog', () => {
   });
 
   test('should fill description from example prompt', async ({ page }) => {
-    await page.getByRole('button', { name: 'Generate with AI' }).click();
+    await page.getByRole('button', { name: 'Generate with AI' }).first().click();
 
     // Click an example prompt
     await page.getByRole('button', { name: /Customer satisfaction/i }).click();
@@ -368,11 +368,11 @@ test.describe('AI Generator Dialog', () => {
     await expect(textarea).not.toBeEmpty();
 
     // Character counter should update
-    await expect(page.getByText(/\d+ \/ 2000/)).toBeVisible();
+    await expect(page.getByText(/\d+ \/ 10000/)).toBeVisible();
   });
 
   test('should close dialog', async ({ page }) => {
-    await page.getByRole('button', { name: 'Generate with AI' }).click();
+    await page.getByRole('button', { name: 'Generate with AI' }).first().click();
     await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).toBeVisible();
 
     // Close dialog

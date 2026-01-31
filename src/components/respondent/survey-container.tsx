@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Question } from "@/types/question";
+import { getLabels, type SurveyLanguage } from "@/lib/i18n/respondent-labels";
 
 interface SurveyData {
   id: string;
@@ -15,6 +16,7 @@ interface SurveyData {
   theme: "light" | "dark" | "minimal";
   logoBase64: string | null;
   questions: Question[];
+  language: SurveyLanguage;
 }
 
 interface SurveyContainerProps {
@@ -30,6 +32,7 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
 
+  const labels = getLabels(survey.language);
   const currentQuestion = survey.questions[currentIndex];
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === survey.questions.length - 1;
@@ -112,7 +115,7 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
   }, [isLast, handleSubmit, handleNext]);
 
   if (isComplete) {
-    return <CompletionScreen surveyTitle={survey.title} onSubmitAnother={handleReset} />;
+    return <CompletionScreen surveyTitle={survey.title} onSubmitAnother={handleReset} language={survey.language} />;
   }
 
   return (
@@ -137,7 +140,7 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
           disabled={isFirst || isAnimating}
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous
+          {labels.previous}
         </Button>
 
         {isLast ? (
@@ -146,18 +149,18 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
             disabled={!canProceed() || isSubmitting}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submit
+            {labels.submit}
           </Button>
         ) : (
           <Button onClick={handleNext} disabled={!canProceed() || isAnimating}>
-            Next
+            {labels.next}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         )}
       </div>
 
       <p className="text-center text-sm text-muted-foreground">
-        Press Enter to continue
+        {labels.pressEnter}
       </p>
     </div>
   );

@@ -73,10 +73,10 @@ export async function POST(request: Request) {
         throw new Error('PGlite instance not available');
       }
       const result = await pglite.query(
-        `INSERT INTO surveys (user_id, title, slug, theme)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, user_id, title, slug, status, theme, logo_base64, sheets_config, created_at, updated_at`,
-        [session.user.id, validated.title, slug, theme]
+        `INSERT INTO surveys (user_id, title, slug, theme, language)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, user_id, title, slug, status, theme, language, logo_base64, sheets_config, created_at, updated_at`,
+        [session.user.id, validated.title, slug, theme, 'ko']
       );
       return NextResponse.json(result.rows[0], { status: 201 });
     }

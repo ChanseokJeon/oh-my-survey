@@ -7,7 +7,8 @@ import type {
   NewResponse,
   QuestionType,
   SurveyStatus,
-  SurveyTheme
+  SurveyTheme,
+  SurveyLanguage
 } from '@/lib/db/schema';
 
 /**
@@ -29,6 +30,7 @@ export function createTestSurveyData(overrides?: Partial<NewSurvey>): NewSurvey 
     userId: '00000000-0000-0000-0000-000000000000', // Placeholder UUID
     status: 'draft' as SurveyStatus,
     theme: 'light' as SurveyTheme,
+    language: 'en' as SurveyLanguage,
     logoBase64: null,
     sheetsConfig: null,
     ...overrides,
@@ -48,6 +50,7 @@ export function createTestSurvey(overrides?: Partial<Survey>): Survey {
     userId: '00000000-0000-0000-0000-000000000000',
     status: 'draft' as SurveyStatus,
     theme: 'light' as SurveyTheme,
+    language: 'en' as SurveyLanguage,
     logoBase64: null,
     sheetsConfig: null,
     createdAt: now,

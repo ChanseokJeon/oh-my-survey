@@ -4,6 +4,7 @@ import { relations } from 'drizzle-orm';
 // ============ ENUMS ============
 export const surveyStatusEnum = pgEnum('survey_status', ['draft', 'published', 'closed']);
 export const surveyThemeEnum = pgEnum('survey_theme', ['light', 'dark', 'minimal']);
+export const surveyLanguageEnum = pgEnum('survey_language', ['en', 'ko']);
 export const questionTypeEnum = pgEnum('question_type', [
   'short_text',
   'long_text',
@@ -62,6 +63,7 @@ export const surveys = pgTable('surveys', {
   slug: varchar('slug', { length: 250 }).notNull().unique(),
   status: surveyStatusEnum('status').default('draft').notNull(),
   theme: surveyThemeEnum('theme').default('light').notNull(),
+  language: surveyLanguageEnum('language').default('ko').notNull(),
   logoBase64: text('logo_base64'),
   sheetsConfig: jsonb('sheets_config').$type<{
     spreadsheetId: string;
@@ -147,4 +149,5 @@ export type NewResponse = typeof responses.$inferInsert;
 
 export type SurveyStatus = 'draft' | 'published' | 'closed';
 export type SurveyTheme = 'light' | 'dark' | 'minimal';
+export type SurveyLanguage = 'en' | 'ko';
 export type QuestionType = 'short_text' | 'long_text' | 'multiple_choice' | 'yes_no' | 'rating';

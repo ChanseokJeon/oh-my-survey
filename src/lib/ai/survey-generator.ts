@@ -3,6 +3,11 @@ import { getAnthropicClient, getOpenAIClient, getConfiguredProvider } from "./cl
 
 const SYSTEM_PROMPT = `You are an expert survey designer. Given a description of what the user wants to learn or measure, generate a comprehensive and well-structured survey.
 
+IMPORTANT: Detect the language of the user's input and generate the survey in that SAME language.
+- If the user writes in Korean (한국어), generate ALL content in Korean including title, questions, and options.
+- If the user writes in English, generate ALL content in English.
+- This is a hard requirement - never mix languages.
+
 Your output MUST be valid JSON matching this exact schema:
 {
   "title": "Survey Title (max 200 characters)",
@@ -70,7 +75,7 @@ async function generateWithOpenAI(description: string): Promise<string> {
   const client = getOpenAIClient();
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-5.2",
     max_tokens: 2048,
     messages: [
       {

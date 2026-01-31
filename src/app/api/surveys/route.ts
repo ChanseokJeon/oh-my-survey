@@ -7,10 +7,11 @@ import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
 import { handleApiError } from "@/lib/utils/api-error";
 
-// Helper: Ensure user exists in PGlite (handles multi-process isolation issue)
-async function ensureUserExistsPGlite(userId: string, email: string | null | undefined): Promise<boolean> {
+// Helper: Ensure user exists in PGlite and return the actual user ID to use
+// Returns the user ID to use for operations (may differ from session ID in edge cases)
+async function ensureUserExistsPGlite(userId: string, email: string | null | undefined): Promise<string | null> {
   const pglite = getPGliteInstance();
-  if (!pglite) return false;
+  if (!pglite) return null;
 
   // Check if user exists by ID
   const existingById = await pglite.query(
@@ -19,25 +20,22 @@ async function ensureUserExistsPGlite(userId: string, email: string | null | und
   );
 
   if (existingById.rows.length > 0) {
-    return true;
+    return userId;
   }
 
-  // User doesn't exist by ID - check if email already exists (different user scenario)
+  // User doesn't exist by ID - check if email already exists
   if (email) {
-    const existingByEmail = await pglite.query(
+    const existingByEmail = await pglite.query<{ id: string }>(
       `SELECT id FROM users WHERE email = $1 LIMIT 1`,
       [email]
     );
 
     if (existingByEmail.rows.length > 0) {
-      // Email exists with different ID - update the ID to match session
-      // This handles cases where user was created with different ID
-      console.log('[API] User email exists with different ID, updating:', userId);
-      await pglite.query(
-        `UPDATE users SET id = $1 WHERE email = $2`,
-        [userId, email]
-      );
-      return true;
+      // Email exists with different ID - use the EXISTING user ID
+      // Don't update the user ID as it may have FK references
+      const existingUserId = existingByEmail.rows[0].id;
+      console.log('[API] User email exists with different ID, using existing:', existingUserId);
+      return existingUserId;
     }
 
     // Neither ID nor email exists - create new user
@@ -46,10 +44,10 @@ async function ensureUserExistsPGlite(userId: string, email: string | null | und
       `INSERT INTO users (id, email, name) VALUES ($1, $2, $3)`,
       [userId, email, email.split("@")[0]]
     );
-    return true;
+    return userId;
   }
 
-  return false;
+  return null;
 }
 
 export async function GET() {
@@ -119,8 +117,9 @@ export async function POST(request: Request) {
       }
 
       // Ensure user exists in this PGlite instance (handles multi-process isolation)
-      const userExists = await ensureUserExistsPGlite(session.user.id, session.user.email);
-      if (!userExists) {
+      // Returns the actual user ID to use (may differ from session ID if email already exists)
+      const actualUserId = await ensureUserExistsPGlite(session.user.id, session.user.email);
+      if (!actualUserId) {
         return NextResponse.json(
           { error: "Session invalid. Please refresh the page and try again." },
           { status: 401 }
@@ -131,7 +130,7 @@ export async function POST(request: Request) {
         `INSERT INTO surveys (user_id, title, slug, theme, language)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, user_id, title, slug, status, theme, language, logo_base64, sheets_config, created_at, updated_at`,
-        [session.user.id, validated.title, slug, theme, 'ko']
+        [actualUserId, validated.title, slug, theme, 'ko']
       );
       return NextResponse.json(result.rows[0], { status: 201 });
     }

@@ -76,7 +76,7 @@ async function generateWithOpenAI(description: string): Promise<string> {
 
   const response = await client.chat.completions.create({
     model: "gpt-5.2",
-    max_tokens: 2048,
+    max_completion_tokens: 4096,
     messages: [
       {
         role: "system",

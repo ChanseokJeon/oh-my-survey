@@ -382,6 +382,47 @@ test.describe('AI Generator Dialog', () => {
     await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).not.toBeVisible();
   });
 
+  test('should generate survey with AI and create it', async ({ page }) => {
+    // Open AI generator dialog
+    await page.getByRole('button', { name: 'Generate with AI' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Generate Survey with AI' })).toBeVisible();
+
+    // Click an example prompt to fill description
+    await page.getByRole('button', { name: /Customer satisfaction/i }).click();
+
+    // Verify description is filled
+    const textarea = page.getByPlaceholder(/customer feedback survey/i);
+    await expect(textarea).not.toBeEmpty();
+
+    // Click Generate Survey button
+    await page.getByRole('button', { name: 'Generate Survey' }).click();
+
+    // Wait for AI generation (may take up to 30 seconds)
+    // Preview step should show "Preview Generated Survey" title
+    await expect(page.getByRole('heading', { name: 'Preview Generated Survey' })).toBeVisible({ timeout: 60000 });
+
+    // Verify questions were generated
+    await expect(page.getByText(/Questions \(\d+\)/)).toBeVisible();
+
+    // Verify at least one question exists (check for question type badges)
+    await expect(page.locator('.border.rounded-lg').first()).toBeVisible();
+
+    // Track the survey for cleanup - we'll get the ID after creation
+    // Click Create Survey button
+    await page.getByRole('button', { name: 'Create Survey' }).click();
+
+    // Should redirect to edit page
+    await expect(page).toHaveURL(/\/surveys\/[^/]+\/edit/, { timeout: 15000 });
+
+    // Extract survey ID for cleanup
+    const url = page.url();
+    const surveyId = url.match(/\/surveys\/([^/]+)\/edit/)?.[1];
+    if (surveyId) createdSurveyIds.push(surveyId);
+
+    // Verify we're on the edit page with questions
+    await expect(page.locator('[data-testid="survey-tab-edit"]')).toBeVisible();
+  });
+
   test.afterAll(async ({ request }) => {
     const cookieHeader = storedCookies.map(c => `${c.name}=${c.value}`).join('; ');
     const deletedIds = new Set<string>();

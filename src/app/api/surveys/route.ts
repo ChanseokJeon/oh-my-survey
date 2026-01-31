@@ -12,21 +12,38 @@ async function ensureUserExistsPGlite(userId: string, email: string | null | und
   const pglite = getPGliteInstance();
   if (!pglite) return false;
 
-  // Check if user exists
-  const existingResult = await pglite.query(
+  // Check if user exists by ID
+  const existingById = await pglite.query(
     `SELECT id FROM users WHERE id = $1 LIMIT 1`,
     [userId]
   );
 
-  if (existingResult.rows.length > 0) {
+  if (existingById.rows.length > 0) {
     return true;
   }
 
-  // User doesn't exist in this process's DB - create them if we have email
+  // User doesn't exist by ID - check if email already exists (different user scenario)
   if (email) {
+    const existingByEmail = await pglite.query(
+      `SELECT id FROM users WHERE email = $1 LIMIT 1`,
+      [email]
+    );
+
+    if (existingByEmail.rows.length > 0) {
+      // Email exists with different ID - update the ID to match session
+      // This handles cases where user was created with different ID
+      console.log('[API] User email exists with different ID, updating:', userId);
+      await pglite.query(
+        `UPDATE users SET id = $1 WHERE email = $2`,
+        [userId, email]
+      );
+      return true;
+    }
+
+    // Neither ID nor email exists - create new user
     console.log('[API] User not found in PGlite instance, creating:', userId);
     await pglite.query(
-      `INSERT INTO users (id, email, name) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+      `INSERT INTO users (id, email, name) VALUES ($1, $2, $3)`,
       [userId, email, email.split("@")[0]]
     );
     return true;

@@ -175,6 +175,7 @@ export function AIGeneratorDialog({
               survey={editableSurvey}
               onSurveyChange={setEditableSurvey}
               isCreating={isCreating}
+              error={error}
               onRegenerate={handleRegenerate}
               onCreate={handleCreate}
             />

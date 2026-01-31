@@ -12,6 +12,7 @@ import {
   Trash2,
   Check,
   GripVertical,
+  AlertCircle,
 } from "lucide-react";
 import type { EditableSurvey, EditableQuestion } from "./types";
 import { getQuestionTypeLabel, getQuestionTypeColor } from "@/constants/question-types";
@@ -20,6 +21,7 @@ interface PreviewStepProps {
   survey: EditableSurvey;
   onSurveyChange: (survey: EditableSurvey) => void;
   isCreating: boolean;
+  error: string | null;
   onRegenerate: () => void;
   onCreate: () => void;
 }
@@ -28,6 +30,7 @@ export function PreviewStep({
   survey,
   onSurveyChange,
   isCreating,
+  error,
   onRegenerate,
   onCreate,
 }: PreviewStepProps) {
@@ -105,6 +108,14 @@ export function PreviewStep({
           </p>
         )}
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3">

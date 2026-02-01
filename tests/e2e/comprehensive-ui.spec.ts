@@ -463,13 +463,15 @@ test.describe('Comprehensive UI & API Test', () => {
     const deleteButton = page.getByRole('button', { name: /Delete \(1\)/ });
     await expect(deleteButton).toBeEnabled();
 
-    // Accept the confirmation dialog
-    page.on('dialog', dialog => dialog.accept());
-
     // Click delete
     await deleteButton.click();
 
+    // Wait for AlertDialog and confirm
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+    await page.getByTestId('confirm-delete-button').click();
+
     // Should exit selection mode and survey should be deleted
+    await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 5000 });
     await page.waitForTimeout(1000);
     await expect(page.getByText(surveyTitle)).not.toBeVisible();
 

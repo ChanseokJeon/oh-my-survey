@@ -13,14 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import { Question } from "@/types/question";
+import { ConfirmNavigationDialog } from "@/components/confirm-navigation-dialog";
 
 interface QuestionEditorProps {
   question: Question | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (question: Partial<Question>) => void;
+  isSaving?: boolean;
 }
 
 export function QuestionEditor({
@@ -28,18 +30,32 @@ export function QuestionEditor({
   open,
   onOpenChange,
   onSave,
+  isSaving = false,
 }: QuestionEditorProps) {
   const [title, setTitle] = useState("");
   const [required, setRequired] = useState(false);
   const [options, setOptions] = useState<string[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 
   useEffect(() => {
     if (question) {
       setTitle(question.title);
       setRequired(question.required);
       setOptions(question.options || []);
+      setIsDirty(false);
     }
   }, [question]);
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    setIsDirty(true);
+  };
+
+  const handleRequiredChange = (value: boolean) => {
+    setRequired(value);
+    setIsDirty(true);
+  };
 
   const handleSave = () => {
     if (!title.trim()) return;
@@ -54,27 +70,40 @@ export function QuestionEditor({
     }
 
     onSave(updates);
+    setIsDirty(false);
     onOpenChange(false);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open && isDirty) {
+      setShowConfirmClose(true);
+    } else {
+      onOpenChange(open);
+    }
   };
 
   const addOption = () => {
     setOptions([...options, ""]);
+    setIsDirty(true);
   };
 
   const updateOption = (index: number, value: string) => {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
+    setIsDirty(true);
   };
 
   const removeOption = (index: number) => {
     setOptions(options.filter((_, i) => i !== index));
+    setIsDirty(true);
   };
 
   if (!question) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit Question</DialogTitle>
@@ -87,7 +116,7 @@ export function QuestionEditor({
               <Textarea
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Enter your question..."
                 rows={3}
               />
@@ -95,7 +124,7 @@ export function QuestionEditor({
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Enter your question..."
               />
             )}
@@ -142,20 +171,32 @@ export function QuestionEditor({
             <Switch
               id="required"
               checked={required}
-              onCheckedChange={setRequired}
+              onCheckedChange={handleRequiredChange}
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!title.trim()}>
+          <Button onClick={handleSave} disabled={!title.trim() || isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ConfirmNavigationDialog
+      open={showConfirmClose}
+      onConfirm={() => {
+        setShowConfirmClose(false);
+        setIsDirty(false);
+        onOpenChange(false);
+      }}
+      onCancel={() => setShowConfirmClose(false)}
+    />
+    </>
   );
 }

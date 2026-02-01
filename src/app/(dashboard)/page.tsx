@@ -9,6 +9,7 @@ import { SurveyCard } from "@/components/survey/survey-card";
 import { Plus, Loader2, Sparkles, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AIGeneratorDialog } from "@/components/survey/ai-generator";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 interface Survey {
   id: string;
@@ -28,6 +29,9 @@ export default function DashboardPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
+  const [deletingSingle, setDeletingSingle] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -52,20 +56,38 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this survey?")) return;
+  function handleDeleteClick(id: string) {
+    setDeletingSurveyId(id);
+    setDeleteDialogOpen(true);
+  }
 
+  async function confirmDelete() {
+    if (selectedIds.size > 0 && !deletingSurveyId) {
+      await handleBulkDeleteConfirm();
+    } else if (deletingSurveyId) {
+      await handleSingleDeleteConfirm();
+    }
+  }
+
+  async function handleSingleDeleteConfirm() {
+    if (!deletingSurveyId) return;
+
+    setDeletingSingle(true);
     try {
-      const response = await fetch(`/api/surveys/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/surveys/${deletingSurveyId}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete survey");
-      setSurveys(surveys.filter((s) => s.id !== id));
+      setSurveys(surveys.filter((s) => s.id !== deletingSurveyId));
       toast({ title: "Survey deleted" });
+      setDeleteDialogOpen(false);
+      setDeletingSurveyId(null);
     } catch {
       toast({
         title: "Error",
         description: "Failed to delete survey",
         variant: "destructive",
       });
+    } finally {
+      setDeletingSingle(false);
     }
   }
 
@@ -96,11 +118,13 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleBulkDelete() {
-    if (selectedIds.size === 0) return;
+  function handleBulkDeleteClick() {
+    setDeletingSurveyId(null);
+    setDeleteDialogOpen(true);
+  }
 
-    const count = selectedIds.size;
-    if (!confirm(`Are you sure you want to delete ${count} survey(s)?`)) return;
+  async function handleBulkDeleteConfirm() {
+    if (selectedIds.size === 0) return;
 
     setBulkDeleting(true);
     try {
@@ -110,6 +134,7 @@ export default function DashboardPage() {
 
       const results = await Promise.all(deletePromises);
       const failedCount = results.filter((r) => !r.ok).length;
+      const count = selectedIds.size;
 
       if (failedCount > 0) {
         toast({
@@ -124,6 +149,7 @@ export default function DashboardPage() {
       setSurveys(surveys.filter((s) => !selectedIds.has(s.id)));
       setSelectedIds(new Set());
       setSelectionMode(false);
+      setDeleteDialogOpen(false);
     } catch {
       toast({
         title: "Error",
@@ -202,7 +228,7 @@ export default function DashboardPage() {
             variant="destructive"
             size="sm"
             disabled={selectedIds.size === 0 || bulkDeleting}
-            onClick={handleBulkDelete}
+            onClick={handleBulkDeleteClick}
           >
             {bulkDeleting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -239,7 +265,7 @@ export default function DashboardPage() {
                 ...survey,
                 createdAt: new Date(survey.createdAt),
               }}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
               selectable={selectionMode}
               selected={selectedIds.has(survey.id)}
               onSelect={handleSelect}
@@ -247,6 +273,22 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) setDeletingSurveyId(null);
+          setDeleteDialogOpen(open);
+        }}
+        title={deletingSurveyId ? "Delete Survey" : `Delete ${selectedIds.size} Survey(s)`}
+        description={
+          deletingSurveyId
+            ? "Are you sure you want to delete this survey? This action cannot be undone."
+            : `Are you sure you want to delete ${selectedIds.size} survey(s)? This action cannot be undone.`
+        }
+        onConfirm={confirmDelete}
+        isDeleting={deletingSingle || bulkDeleting}
+      />
 
       <AIGeneratorDialog
         open={aiDialogOpen}

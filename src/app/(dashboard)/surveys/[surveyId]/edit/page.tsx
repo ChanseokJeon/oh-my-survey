@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { QuestionList } from "@/components/builder/question-list";
 import { QuestionTypePicker } from "@/components/builder/question-type-picker";
 import { QuestionEditor } from "@/components/builder/question-editor";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useSurvey } from "@/contexts/survey-context";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 
 interface Question {
   id: string;
@@ -24,6 +25,11 @@ export default function EditSurveyPage() {
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const { toast } = useToast();
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Sync questions with context
   useEffect(() => {
@@ -33,8 +39,9 @@ export default function EditSurveyPage() {
   }, [contextQuestions]);
 
   async function handleAddQuestion(type: Question["type"]) {
-    if (!survey) return;
+    if (!survey || isAdding) return;
 
+    setIsAdding(true);
     try {
       const response = await fetch(`/api/surveys/${survey.id}/questions`, {
         method: "POST",
@@ -58,6 +65,8 @@ export default function EditSurveyPage() {
         description: "Failed to add question",
         variant: "destructive",
       });
+    } finally {
+      setIsAdding(false);
     }
   }
 
@@ -91,8 +100,9 @@ export default function EditSurveyPage() {
   }
 
   async function handleEditQuestion(updates: Partial<Question>) {
-    if (!editingQuestion || !survey) return;
+    if (!editingQuestion || !survey || isSaving) return;
 
+    setIsSaving(true);
     try {
       const response = await fetch(
         `/api/surveys/${survey.id}/questions/${editingQuestion.id}`,
@@ -113,28 +123,39 @@ export default function EditSurveyPage() {
         description: "Failed to update question",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   }
 
-  async function handleDeleteQuestion(id: string) {
-    if (!confirm("Delete this question?")) return;
-    if (!survey) return;
+  function handleDeleteClick(id: string) {
+    setDeletingQuestionId(id);
+    setDeleteDialogOpen(true);
+  }
 
+  async function confirmDeleteQuestion() {
+    if (!deletingQuestionId || !survey) return;
+
+    setIsDeleting(true);
     try {
       const response = await fetch(
-        `/api/surveys/${survey.id}/questions/${id}`,
+        `/api/surveys/${survey.id}/questions/${deletingQuestionId}`,
         { method: "DELETE" }
       );
 
       if (!response.ok) throw new Error("Failed to delete");
-      setQuestions(questions.filter((q) => q.id !== id));
+      setQuestions(questions.filter((q) => q.id !== deletingQuestionId));
       toast({ title: "Question deleted" });
+      setDeleteDialogOpen(false);
+      setDeletingQuestionId(null);
     } catch {
       toast({
         title: "Error",
         description: "Failed to delete question",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -143,8 +164,12 @@ export default function EditSurveyPage() {
       {questions.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 border rounded-lg border-dashed">
           <p className="text-muted-foreground mb-4">No questions yet</p>
-          <Button onClick={() => setShowTypePicker(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowTypePicker(true)} disabled={isAdding}>
+            {isAdding ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
             Add your first question
           </Button>
         </div>
@@ -154,10 +179,14 @@ export default function EditSurveyPage() {
             questions={questions}
             onReorder={handleReorder}
             onEdit={setEditingQuestion}
-            onDelete={handleDeleteQuestion}
+            onDelete={handleDeleteClick}
           />
-          <Button onClick={() => setShowTypePicker(true)} className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowTypePicker(true)} className="w-full" disabled={isAdding}>
+            {isAdding ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
             Add Question
           </Button>
         </>
@@ -174,6 +203,19 @@ export default function EditSurveyPage() {
         open={!!editingQuestion}
         onOpenChange={(open) => !open && setEditingQuestion(null)}
         onSave={handleEditQuestion}
+        isSaving={isSaving}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) setDeletingQuestionId(null);
+          setDeleteDialogOpen(open);
+        }}
+        title="Delete Question"
+        description="Are you sure you want to delete this question? This action cannot be undone."
+        onConfirm={confirmDeleteQuestion}
+        isDeleting={isDeleting}
       />
     </div>
   );

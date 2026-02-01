@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Eye } from 'lucide-react';
 import { Survey, SurveyStatus } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,17 @@ export function SurveyLayoutHeader({ survey, activeTab }: SurveyLayoutHeaderProp
           <Badge variant={statusConfig.variant} className="ml-2">
             {statusConfig.label}
           </Badge>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => window.open(`/s/${survey.slug}?preview=true`, '_blank')}
+            data-testid="preview-button"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </Button>
         </div>
 
         {/* Tab navigation */}

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSurvey } from "@/contexts/survey-context";
 import { Loader2, Trash2, Upload, ExternalLink, Wand2 } from "lucide-react";
 import { SheetsSetupWizard } from "@/components/survey/sheets-setup-wizard";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 export default function SettingsPage() {
   const { survey, refreshSurvey } = useSurvey();
@@ -23,6 +24,7 @@ export default function SettingsPage() {
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -96,11 +98,8 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleDelete() {
+  async function confirmDeleteSurvey() {
     if (!survey) return;
-    if (!confirm("Are you sure you want to delete this survey? This cannot be undone.")) {
-      return;
-    }
 
     setDeleting(true);
     try {
@@ -319,7 +318,7 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+        <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={deleting}>
           {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <Trash2 className="mr-2 h-4 w-4" />
           Delete Survey
@@ -329,6 +328,15 @@ export default function SettingsPage() {
           Save Settings
         </Button>
       </div>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Survey"
+        description="Are you sure you want to delete this survey? This action cannot be undone."
+        onConfirm={confirmDeleteSurvey}
+        isDeleting={deleting}
+      />
     </div>
   );
 }

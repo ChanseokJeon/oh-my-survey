@@ -20,7 +20,8 @@ export async function GET(
   const { surveyId, questionId } = await params;
 
   // Verify survey ownership
-  const survey = await verifySurveyOwnership(surveyId, session.user.id);
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+  const survey = await verifySurveyOwnership(surveyId, actualUserId);
   if (!survey) {
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }

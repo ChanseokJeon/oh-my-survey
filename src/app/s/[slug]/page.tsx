@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { SurveyContainer } from "@/components/respondent/survey-container";
 
 interface SurveyData {
@@ -21,17 +21,21 @@ interface SurveyData {
 async function getSurvey(
   slug: string,
   isPreview: boolean = false,
-  userId?: string
+  cookieHeader?: string
 ): Promise<SurveyData | null> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   try {
     const url = new URL(`${baseUrl}/api/public/surveys/${slug}`);
-    if (isPreview && userId) {
+    if (isPreview) {
       url.searchParams.set("preview", "true");
-      url.searchParams.set("userId", userId);
+    }
+    const headers: HeadersInit = {};
+    if (cookieHeader) {
+      headers["Cookie"] = cookieHeader;
     }
     const response = await fetch(url.toString(), {
       cache: "no-store",
+      headers,
     });
     if (!response.ok) return null;
     return response.json();
@@ -51,8 +55,13 @@ export default async function PublicSurveyPage({
   const { preview } = await searchParams;
   const isPreview = preview === "true";
 
-  const session = await auth();
-  const survey = await getSurvey(slug, isPreview, session?.user?.id);
+  // Get cookies for forwarding to API (needed for preview auth)
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll()
+    .map(c => `${c.name}=${c.value}`)
+    .join("; ");
+
+  const survey = await getSurvey(slug, isPreview, isPreview ? cookieHeader : undefined);
 
   if (!survey) {
     notFound();

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db, surveys, questions, ensureDbReady } from "@/lib/db";
 import { eq, and, asc } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 export async function GET(
   request: Request,
@@ -10,7 +12,6 @@ export async function GET(
   const { slug } = await params;
   const { searchParams } = new URL(request.url);
   const isPreview = searchParams.get("preview") === "true";
-  const userId = searchParams.get("userId");
 
   // Find survey by slug
   const [survey] = await db
@@ -34,13 +35,18 @@ export async function GET(
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }
 
-  // For preview mode, verify ownership
+  // For preview mode, verify ownership using server-side session
   if (isPreview && survey.status === "draft") {
-    if (!userId || survey.userId !== userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Resolve actual user ID for PGlite compatibility
+    const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+
+    if (survey.userId !== actualUserId) {
+      return NextResponse.json({ error: "Survey not found" }, { status: 404 });
     }
   }
 

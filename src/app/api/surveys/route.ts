@@ -6,7 +6,7 @@ import { eq, desc, count } from "drizzle-orm";
 import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
 import { handleApiError } from "@/lib/utils/api-error";
-import { resolveUserIdForPGlite } from "@/lib/utils/pglite-user";
+import { resolveUserIdForPGlite, getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 export async function GET() {
   const session = await auth();
@@ -15,6 +15,10 @@ export async function GET() {
   }
 
   await ensureDbReady();
+
+  // Resolve actual user ID for PGlite (may differ from session ID)
+  const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+
   const userSurveys = await db
     .select({
       id: surveys.id,
@@ -26,7 +30,7 @@ export async function GET() {
       updatedAt: surveys.updatedAt,
     })
     .from(surveys)
-    .where(eq(surveys.userId, session.user.id))
+    .where(eq(surveys.userId, actualUserId))
     .orderBy(desc(surveys.createdAt));
 
   // Get counts for each survey
@@ -67,6 +71,9 @@ export async function POST(request: Request) {
     const slug = generateSlug(validated.title);
     const theme = validated.theme || 'light';
 
+    // Resolve actual user ID (for PGlite multi-process compatibility)
+    const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+
     // For PGlite, use raw SQL due to drizzle-orm/pglite insert compatibility issues
     if (currentProvider === 'pglite') {
       const pglite = getPGliteInstance();
@@ -75,9 +82,8 @@ export async function POST(request: Request) {
       }
 
       // Ensure user exists in this PGlite instance (handles multi-process isolation)
-      // Returns the actual user ID to use (may differ from session ID if email already exists)
-      const actualUserId = await resolveUserIdForPGlite(session.user.id, session.user.email);
-      if (!actualUserId) {
+      const resolvedUserId = await resolveUserIdForPGlite(session.user.id, session.user.email);
+      if (!resolvedUserId) {
         return NextResponse.json(
           { error: "Session invalid. Please refresh the page and try again." },
           { status: 401 }
@@ -88,7 +94,7 @@ export async function POST(request: Request) {
         `INSERT INTO surveys (user_id, title, slug, theme, language)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, user_id, title, slug, status, theme, language, logo_base64, sheets_config, created_at, updated_at`,
-        [actualUserId, validated.title, slug, theme, 'ko']
+        [resolvedUserId, validated.title, slug, theme, 'ko']
       );
       return NextResponse.json(result.rows[0], { status: 201 });
     }
@@ -97,7 +103,7 @@ export async function POST(request: Request) {
     const [newSurvey] = await db
       .insert(surveys)
       .values({
-        userId: session.user.id,
+        userId: actualUserId,
         title: validated.title,
         slug: slug,
         theme: theme,

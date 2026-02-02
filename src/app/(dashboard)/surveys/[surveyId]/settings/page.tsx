@@ -9,14 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ThemeProvider, useSurveyTheme } from "@/components/providers/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useSurvey } from "@/contexts/survey-context";
-import { Loader2, Trash2, Upload, ExternalLink, Wand2 } from "lucide-react";
+import { Loader2, Trash2, Upload, ExternalLink, Wand2, Palette } from "lucide-react";
 import { SheetsSetupWizard } from "@/components/survey/sheets-setup-wizard";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { ThemeExtractorDialog } from "@/components/theme/theme-extractor-dialog";
+import { CustomThemeData } from "@/lib/theme/types";
 
 export default function SettingsPage() {
   const { survey, refreshSurvey } = useSurvey();
   const [title, setTitle] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark" | "minimal">("light");
+  const [theme, setTheme] = useState<"light" | "dark" | "minimal" | "custom">("light");
+  const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [sheetName, setSheetName] = useState("");
@@ -25,13 +28,15 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [extractorOpen, setExtractorOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     if (survey) {
       setTitle(survey.title);
-      setTheme(survey.theme as "light" | "dark" | "minimal");
+      setTheme(survey.theme as "light" | "dark" | "minimal" | "custom");
+      setCustomTheme((survey as any).customTheme || null);
       setLogo(survey.logoBase64);
       setSpreadsheetId((survey.sheetsConfig as any)?.spreadsheetId || "");
       setSheetName((survey.sheetsConfig as any)?.sheetName || "");
@@ -49,6 +54,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           title,
           theme,
+          customTheme: theme === "custom" ? customTheme : null,
           logoBase64: logo,
           sheetsConfig: spreadsheetId
             ? { spreadsheetId, sheetName: sheetName || "Survey Responses" }
@@ -162,8 +168,17 @@ export default function SettingsPage() {
 
           <div className="space-y-2">
             <Label>Theme</Label>
-            <ThemeProvider defaultTheme={theme}>
-              <ThemeSelectorWithCallback onThemeChange={setTheme} currentTheme={theme} />
+            <ThemeProvider defaultTheme={theme} defaultCustomTheme={customTheme}>
+              <ThemeSelectorWithCallback
+                onThemeChange={setTheme}
+                currentTheme={theme}
+                customTheme={customTheme}
+                onOpenExtractor={() => setExtractorOpen(true)}
+                onClearCustomTheme={() => {
+                  setCustomTheme(null);
+                  setTheme("light");
+                }}
+              />
             </ThemeProvider>
           </div>
 
@@ -337,6 +352,17 @@ export default function SettingsPage() {
         onConfirm={confirmDeleteSurvey}
         isDeleting={deleting}
       />
+
+      <ThemeExtractorDialog
+        open={extractorOpen}
+        onOpenChange={setExtractorOpen}
+        surveyId={survey?.id || ""}
+        onApplyTheme={(theme) => {
+          setCustomTheme(theme);
+          setTheme("custom");
+          toast({ title: "Custom theme applied" });
+        }}
+      />
     </div>
   );
 }
@@ -344,41 +370,91 @@ export default function SettingsPage() {
 function ThemeSelectorWithCallback({
   onThemeChange,
   currentTheme,
+  customTheme,
+  onOpenExtractor,
+  onClearCustomTheme,
 }: {
-  onThemeChange: (theme: "light" | "dark" | "minimal") => void;
+  onThemeChange: (theme: "light" | "dark" | "minimal" | "custom") => void;
   currentTheme: string;
+  customTheme: CustomThemeData | null;
+  onOpenExtractor: () => void;
+  onClearCustomTheme: () => void;
 }) {
-  const { setTheme } = useSurveyTheme();
+  const { setTheme, setCustomTheme } = useSurveyTheme();
 
   useEffect(() => {
-    setTheme(currentTheme as "light" | "dark" | "minimal");
-  }, [currentTheme, setTheme]);
+    setTheme(currentTheme as "light" | "dark" | "minimal" | "custom");
+    setCustomTheme(customTheme);
+  }, [currentTheme, customTheme, setTheme, setCustomTheme]);
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      {(["light", "dark", "minimal"] as const).map((t) => (
-        <button
-          key={t}
-          onClick={() => {
-            setTheme(t);
-            onThemeChange(t);
-          }}
-          className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary ${
-            currentTheme === t ? "border-primary ring-2 ring-primary/20" : "border-muted"
-          }`}
-        >
-          <div
-            className={`h-12 w-full rounded-md border ${
-              t === "light"
-                ? "bg-white border-gray-200"
-                : t === "dark"
-                ? "bg-gray-900 border-gray-700"
-                : "bg-gray-50 border-gray-300"
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-4">
+        {(["light", "dark", "minimal"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => {
+              setTheme(t);
+              onThemeChange(t);
+            }}
+            className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary ${
+              currentTheme === t ? "border-primary ring-2 ring-primary/20" : "border-muted"
             }`}
-          />
-          <span className="font-medium capitalize">{t}</span>
-        </button>
-      ))}
+          >
+            <div
+              className={`h-12 w-full rounded-md border ${
+                t === "light"
+                  ? "bg-white border-gray-200"
+                  : t === "dark"
+                  ? "bg-gray-900 border-gray-700"
+                  : "bg-gray-50 border-gray-300"
+              }`}
+            />
+            <span className="font-medium capitalize">{t}</span>
+          </button>
+        ))}
+      </div>
+
+      {currentTheme === "custom" && customTheme ? (
+        <div className="border rounded-lg p-4 bg-muted/50">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4 text-primary" />
+              <span className="font-medium">Custom Theme Active</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearCustomTheme}
+            >
+              Clear
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Created from {customTheme.meta.source === "image" ? "uploaded image" : customTheme.meta.source}
+          </p>
+          {customTheme.meta.extractedPalette && (
+            <div className="flex gap-1">
+              {customTheme.meta.extractedPalette.slice(0, 5).map((color, i) => (
+                <div
+                  key={i}
+                  className="h-6 w-6 rounded border shadow-sm"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={onOpenExtractor}
+          className="w-full"
+        >
+          <Palette className="mr-2 h-4 w-4" />
+          Create Custom Theme from Image
+        </Button>
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import type { CustomThemeData } from '@/lib/theme/types';
 
 // ============ ENUMS ============
 export const surveyStatusEnum = pgEnum('survey_status', ['draft', 'published', 'closed']);
-export const surveyThemeEnum = pgEnum('survey_theme', ['light', 'dark', 'minimal']);
+export const surveyThemeEnum = pgEnum('survey_theme', ['light', 'dark', 'minimal', 'custom']);
 export const surveyLanguageEnum = pgEnum('survey_language', ['en', 'ko']);
 export const questionTypeEnum = pgEnum('question_type', [
   'short_text',
@@ -69,6 +70,7 @@ export const surveys = pgTable('surveys', {
     spreadsheetId: string;
     sheetName: string;
   } | null>(),
+  customTheme: jsonb('custom_theme').$type<CustomThemeData | null>(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
@@ -148,6 +150,6 @@ export type Response = typeof responses.$inferSelect;
 export type NewResponse = typeof responses.$inferInsert;
 
 export type SurveyStatus = 'draft' | 'published' | 'closed';
-export type SurveyTheme = 'light' | 'dark' | 'minimal';
+export type SurveyTheme = 'light' | 'dark' | 'minimal' | 'custom';
 export type SurveyLanguage = 'en' | 'ko';
 export type QuestionType = 'short_text' | 'long_text' | 'multiple_choice' | 'yes_no' | 'rating';

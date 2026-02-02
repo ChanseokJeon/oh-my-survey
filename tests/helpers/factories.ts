@@ -33,6 +33,7 @@ export function createTestSurveyData(overrides?: Partial<NewSurvey>): NewSurvey 
     language: 'en' as SurveyLanguage,
     logoBase64: null,
     sheetsConfig: null,
+    customTheme: null,
     ...overrides,
   };
 }
@@ -53,6 +54,7 @@ export function createTestSurvey(overrides?: Partial<Survey>): Survey {
     language: 'en' as SurveyLanguage,
     logoBase64: null,
     sheetsConfig: null,
+    customTheme: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,

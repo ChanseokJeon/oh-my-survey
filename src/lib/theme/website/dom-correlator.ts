@@ -121,6 +121,17 @@ const DOM_EXTRACTION_SCRIPT = `
               colors.add(bg);
             }
 
+            // Background image (gradients)
+            const bgImage = style.backgroundImage;
+            if (bgImage && bgImage !== 'none' && bgImage.includes('gradient')) {
+              // Extract all color values from gradient string
+              const colorRegex = /(?:#[0-9a-f]{3,8}|rgba?\\s*\\([^)]+\\)|hsla?\\s*\\([^)]+\\))/gi;
+              const matches = bgImage.match(colorRegex);
+              if (matches) {
+                matches.forEach(c => colors.add(c));
+              }
+            }
+
             // Text color (for headings, links)
             const fg = style.color;
             if (fg && fg !== 'rgba(0, 0, 0, 0)') {

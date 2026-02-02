@@ -11,7 +11,7 @@ export function ThemePreview({ theme, logo }: ThemePreviewProps) {
       className="survey-container border rounded-lg p-6 space-y-6"
       data-survey-theme={theme}
       style={{
-        backgroundColor: `hsl(var(--survey-bg))`,
+        background: `var(--survey-bg-raw, hsl(var(--survey-bg)))`,
         color: `hsl(var(--survey-fg))`,
         borderColor: `hsl(var(--survey-border))`,
       }}

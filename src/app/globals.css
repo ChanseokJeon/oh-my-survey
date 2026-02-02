@@ -75,7 +75,8 @@
 
 /* Survey-specific styles using theme variables */
 .survey-container {
-  background-color: hsl(var(--survey-bg));
+  /* Gradient support: use --survey-bg-raw if set, otherwise fallback to solid HSL color */
+  background: var(--survey-bg-raw, hsl(var(--survey-bg)));
   color: hsl(var(--survey-fg));
 }
 

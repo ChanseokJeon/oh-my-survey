@@ -41,7 +41,7 @@ export function ThemePreviewCard({ theme }: ThemePreviewCardProps) {
             <div
               className="space-y-4 rounded-lg p-6 border"
               style={{
-                backgroundColor: `hsl(${colors.surveyBg})`,
+                background: colors.surveyBgRaw || `hsl(${colors.surveyBg})`,
                 color: `hsl(${colors.surveyFg})`,
                 borderColor: `hsl(${colors.surveyBorder})`,
               }}

@@ -34,6 +34,9 @@ export function ThemeProvider({
       root.setAttribute("data-survey-theme", "custom");
 
       Object.entries(customTheme.colors).forEach(([key, value]) => {
+        // Skip undefined optional fields (e.g., surveyBgRaw when no gradient)
+        if (value === undefined) return;
+
         const cssVar = THEME_KEY_TO_CSS_VAR[key as keyof ThemeColors];
         if (cssVar && ALLOWED_CSS_VARS.includes(cssVar as any)) {
           root.style.setProperty(cssVar, value);
@@ -43,7 +46,7 @@ export function ThemeProvider({
       // Preset theme: use CSS file
       root.setAttribute("data-survey-theme", theme);
 
-      // Clear custom CSS variables
+      // Clear custom CSS variables (including gradient)
       ALLOWED_CSS_VARS.forEach((cssVar) => {
         root.style.removeProperty(cssVar);
       });

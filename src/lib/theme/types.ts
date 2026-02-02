@@ -10,9 +10,10 @@ export interface CustomThemeData {
   };
 }
 
-// HSL 형식: "221.2 83.2% 53.3%"
+// HSL 형식: "221.2 83.2% 53.3%" 또는 CSS gradient 문자열
 export interface ThemeColors {
   surveyBg: string;
+  surveyBgRaw?: string; // Optional: raw CSS value (gradient or color) for background
   surveyFg: string;
   surveyPrimary: string;
   surveyPrimaryFg: string;
@@ -26,6 +27,7 @@ export interface ThemeColors {
 
 export const ALLOWED_CSS_VARS = [
   '--survey-bg',
+  '--survey-bg-raw', // For gradients or raw CSS background values
   '--survey-fg',
   '--survey-primary',
   '--survey-primary-fg',
@@ -39,6 +41,7 @@ export const ALLOWED_CSS_VARS = [
 
 export const THEME_KEY_TO_CSS_VAR: Record<keyof ThemeColors, string> = {
   surveyBg: '--survey-bg',
+  surveyBgRaw: '--survey-bg-raw',
   surveyFg: '--survey-fg',
   surveyPrimary: '--survey-primary',
   surveyPrimaryFg: '--survey-primary-fg',

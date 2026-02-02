@@ -60,17 +60,9 @@ export async function extractWebsiteTheme(url: string): Promise<WebsiteThemeResu
       const filtered = filterGrayscale(visualColors);
 
       if (filtered.length >= 2) {
-        // Convert DOMColorMap to flat string array for mergeColorsHueBinningFirst
-        const domColorArray = [
-          ...domColors.logo,
-          ...domColors.cta,
-          ...domColors.accent,
-          ...domColors.headings,
-          ...domColors.navigation,
-        ];
         const cssColorArray = Object.values(cssVars.colors);
 
-        palette = mergeColorsHueBinningFirst(visualColors, domColorArray, cssColorArray);
+        palette = mergeColorsHueBinningFirst(visualColors, domColors, cssColorArray);
         source = 'vision-first';
       } else {
         // FALLBACK: Not enough visual colors after filtering

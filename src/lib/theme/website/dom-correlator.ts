@@ -21,13 +21,52 @@ const SEMANTIC_SELECTORS = {
     '[aria-label*="logo" i]',
   ],
   cta: [
+    // Primary button classes
     'button[class*="primary"]',
-    'a[class*="cta"]',
-    'button[class*="cta"]',
-    '[class*="hero"] button',
-    '[class*="hero"] a[href]',
+    'a[class*="primary"]',
     'button[class*="btn-primary"]',
     '.btn-primary',
+
+    // CTA-specific classes
+    'a[class*="cta"]',
+    'button[class*="cta"]',
+    '[class*="cta-button"]',
+    '[class*="call-to-action"]',
+
+    // Material-UI buttons
+    '.MuiButton-root',
+    '.MuiButton-contained',
+    '.MuiButton-containedPrimary',
+    '[class*="MuiButton-root"]',
+    '[class*="MuiButton-contained"]',
+    '[class*="MuiLoadingButton"]',
+
+    // Hero section buttons (high priority CTA location)
+    '[class*="hero"] button',
+    '[class*="hero"] a[href]:not([href="#"])',
+    '[class*="banner"] button',
+    '[class*="banner"] a[href]:not([href="#"])',
+
+    // Generic colored buttons (likely CTAs)
+    'button:not([class*="secondary"]):not([class*="outline"]):not([class*="ghost"])',
+    'main button',
+    '[class*="main"] button',
+
+    // Korean/international button text patterns via data attributes
+    '[data-action="signup"]',
+    '[data-action="start"]',
+    '[data-action="trial"]',
+
+    // Action buttons
+    '[class*="action"] button',
+    '[class*="start"] button',
+    'button[class*="start"]',
+    'a[class*="start"]',
+
+    // Submit/signup buttons
+    'button[type="submit"]',
+    '[class*="signup"]',
+    '[class*="register"]',
   ],
   navigation: [
     'nav',
@@ -55,6 +94,17 @@ const DOM_EXTRACTION_SCRIPT = `
   (() => {
     const selectors = ${JSON.stringify(SEMANTIC_SELECTORS)};
     const result = {};
+
+    // Filter to prioritize colorful backgrounds
+    const isColorful = (color) => {
+      const match = color.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+      if (!match) return false;
+      const [, r, g, b] = match.map(Number);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const saturation = max === 0 ? 0 : (max - min) / max;
+      return saturation > 0.3 && max > 50; // Colorful and not too dark
+    };
 
     for (const [category, selectorList] of Object.entries(selectors)) {
       const colors = new Set();
@@ -96,7 +146,10 @@ const DOM_EXTRACTION_SCRIPT = `
         }
       }
 
-      result[category] = [...colors].slice(0, 5);
+      // Sort colors so colorful ones come first
+      result[category] = [...colors]
+        .sort((a, b) => (isColorful(b) ? 1 : 0) - (isColorful(a) ? 1 : 0))
+        .slice(0, 5);
     }
 
     return result;

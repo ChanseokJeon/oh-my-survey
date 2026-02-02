@@ -311,9 +311,61 @@ export function mergeColorsVisionFirst(
 }
 
 /**
+ * Semantic priority multipliers for different UI elements.
+ * Higher values = more important for brand identity.
+ */
+const SEMANTIC_PRIORITY = {
+  cta: 3.0,        // CTA buttons - highest priority for brand colors
+  logo: 2.5,       // Logo colors
+  accent: 2.0,     // Accent colors
+  headings: 1.5,   // Headings
+  navigation: 1.2, // Navigation
+  none: 1.0        // No semantic match
+};
+
+/**
+ * Gets semantic priority multiplier for a color based on DOM context.
+ * Checks if color matches semantic categories (CTA, logo, etc.) and returns
+ * corresponding priority multiplier.
+ *
+ * @param hex - Color to check
+ * @param domColors - DOM color map with semantic categories
+ * @returns Priority multiplier (1.0 to 3.0)
+ */
+function getSemanticPriority(hex: string, domColors: DOMColorMap): number {
+  const MATCH_THRESHOLD = 15; // deltaE threshold for "similar" colors
+
+  // Check CTA first (highest priority)
+  for (const ctaHex of domColors.cta) {
+    if (deltaE(hex, ctaHex) < MATCH_THRESHOLD) return SEMANTIC_PRIORITY.cta;
+  }
+  // Check logo
+  for (const logoHex of domColors.logo) {
+    if (deltaE(hex, logoHex) < MATCH_THRESHOLD) return SEMANTIC_PRIORITY.logo;
+  }
+  // Check accent
+  for (const accentHex of domColors.accent) {
+    if (deltaE(hex, accentHex) < MATCH_THRESHOLD) return SEMANTIC_PRIORITY.accent;
+  }
+  // Check headings
+  for (const headingHex of domColors.headings) {
+    if (deltaE(hex, headingHex) < MATCH_THRESHOLD) return SEMANTIC_PRIORITY.headings;
+  }
+  // Check navigation
+  for (const navHex of domColors.navigation) {
+    if (deltaE(hex, navHex) < MATCH_THRESHOLD) return SEMANTIC_PRIORITY.navigation;
+  }
+
+  return SEMANTIC_PRIORITY.none;
+}
+
+/**
  * Merges colors using Hue-Binning extraction as the primary source.
  * Hue-binning already provides properly separated colors by hue regions,
  * so we primarily trust visual colors and cross-validate with DOM/CSS for confidence boosting.
+ *
+ * Now includes semantic priority to ensure CTA buttons and other important UI elements
+ * rank higher than large-area decorative elements like gradients.
  *
  * @param visualColors - Colors from hue-binning extraction (already hue-separated)
  * @param domColors - DOM-extracted colors by semantic category
@@ -322,12 +374,11 @@ export function mergeColorsVisionFirst(
  */
 export function mergeColorsHueBinningFirst(
   visualColors: ColorWithArea[],
-  domColors: string[],
+  domColors: DOMColorMap,
   cssColors: string[]
 ): string[] {
   const DELTA_E_THRESHOLD = 10; // Perceptual similarity threshold
-  const DOM_BOOST = 1.5; // Boost confidence if color matches DOM color
-  const CSS_BOOST = 1.2; // Smaller boost for CSS colors (less reliable)
+  const CSS_BOOST = 1.2; // Boost for CSS colors (less reliable)
 
   // 1. Filter out grayscale/extreme colors
   const filtered = filterGrayscale(visualColors);
@@ -340,30 +391,68 @@ export function mergeColorsHueBinningFirst(
   }
 
   const scored: ScoredColor[] = filtered.map(({ hex, percentage }) => {
-    let confidence = percentage; // Start with visual area as base confidence
+    // Start with visual area as base confidence
+    let confidence = percentage;
 
-    // Cross-validate with DOM colors: boost if similar color found
-    for (const domHex of domColors) {
-      if (deltaE(hex, domHex) < DELTA_E_THRESHOLD) {
-        confidence *= DOM_BOOST;
-        break; // Only apply boost once per color
-      }
-    }
+    // Apply semantic priority multiplier (replaces old DOM_BOOST)
+    const semanticPriority = getSemanticPriority(hex, domColors);
+    confidence *= semanticPriority;
 
     // Cross-validate with CSS colors: smaller boost
+    let cssBoost = 1.0;
     for (const cssHex of cssColors) {
       if (deltaE(hex, cssHex) < DELTA_E_THRESHOLD) {
-        confidence *= CSS_BOOST;
+        cssBoost = CSS_BOOST;
         break;
       }
     }
+    confidence *= cssBoost;
 
     return { hex, confidence, percentage };
   });
 
-  // 3. Sort by confidence (descending) and return top 8
+  // 3. Sort by confidence (descending)
   scored.sort((a, b) => b.confidence - a.confidence);
-  return scored.slice(0, 8).map(c => c.hex);
+
+  // 4. INJECT: Colorful CTA/logo colors at the front (highest priority)
+  const result: string[] = [];
+  const addedHexes = new Set<string>();
+
+  // Helper to check if color is colorful (not gray/white/black)
+  const isColorful = (hex: string): boolean => {
+    const rgb = hexToRgb(hex);
+    const max = Math.max(rgb.r, rgb.g, rgb.b);
+    const min = Math.min(rgb.r, rgb.g, rgb.b);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    return saturation > 0.3 && max > 50 && min < 230; // Colorful, not too dark, not white
+  };
+
+  // 4a. First inject colorful CTA colors
+  for (const ctaHex of domColors.cta) {
+    if (isColorful(ctaHex) && !addedHexes.has(ctaHex.toLowerCase())) {
+      result.push(ctaHex);
+      addedHexes.add(ctaHex.toLowerCase());
+    }
+  }
+
+  // 4b. Then inject colorful logo colors
+  for (const logoHex of domColors.logo) {
+    if (isColorful(logoHex) && !addedHexes.has(logoHex.toLowerCase())) {
+      result.push(logoHex);
+      addedHexes.add(logoHex.toLowerCase());
+    }
+  }
+
+  // 4c. Fill remaining slots with scored visual colors (up to 8 total)
+  for (const { hex } of scored) {
+    if (result.length >= 8) break;
+    if (!addedHexes.has(hex.toLowerCase())) {
+      result.push(hex);
+      addedHexes.add(hex.toLowerCase());
+    }
+  }
+
+  return result;
 }
 
 /**

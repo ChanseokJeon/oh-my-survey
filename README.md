@@ -1,6 +1,6 @@
 # Oh My Survey
 
-몇 마리 말을 바로 설문으로 변환 해주는 Text2Survey 기능과 내 브랜드 디자인 통일성(Design Consistency)을 유지하는 Typeform 스타일의 설문 웹페이지 빌더
+텍스트 몇 줄을 바로 설문으로 변환 해주는 Text2Survey 기능과 내 브랜드 디자인 통일성(Design Consistency)을 유지하는 Typeform 스타일의 설문 웹페이지 빌더
 - 언제까지 하나 하나 설문 내용과 유형을 정해야할까요? One-shot build 제공 
 - 디자인도 하나 하나 고르지 말고, 웹사이트 url 이나 이미지 하나만 올리면 디자인 통일성을 지켜주는 설문지를 바로 생성해 줍니다.
 

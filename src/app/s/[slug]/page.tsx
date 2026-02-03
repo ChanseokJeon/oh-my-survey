@@ -5,7 +5,22 @@ import { SurveyContainer } from "@/components/respondent/survey-container";
 interface SurveyData {
   id: string;
   title: string;
-  theme: "light" | "dark" | "minimal";
+  theme: "light" | "dark" | "minimal" | "custom";
+  customTheme?: {
+    colors: {
+      surveyBg: string;
+      surveyBgRaw?: string;
+      surveyFg: string;
+      surveyPrimary: string;
+      surveyPrimaryFg: string;
+      surveyMuted: string;
+      surveyMutedFg: string;
+      surveyBorder: string;
+      surveyInput: string;
+      surveyCard: string;
+      surveyCardFg: string;
+    };
+  };
   logoBase64: string | null;
   language: "en" | "ko";
   questions: Array<{
@@ -16,6 +31,30 @@ interface SurveyData {
     required: boolean;
     order: number;
   }>;
+}
+
+function getCustomThemeStyles(customTheme?: SurveyData['customTheme']): React.CSSProperties {
+  if (!customTheme?.colors) return {};
+
+  const { colors } = customTheme;
+  const styles: Record<string, string> = {
+    '--survey-bg': colors.surveyBg,
+    '--survey-fg': colors.surveyFg,
+    '--survey-primary': colors.surveyPrimary,
+    '--survey-primary-fg': colors.surveyPrimaryFg,
+    '--survey-muted': colors.surveyMuted,
+    '--survey-muted-fg': colors.surveyMutedFg,
+    '--survey-border': colors.surveyBorder,
+    '--survey-input': colors.surveyInput,
+    '--survey-card': colors.surveyCard,
+    '--survey-card-fg': colors.surveyCardFg,
+  };
+
+  if (colors.surveyBgRaw) {
+    styles['--survey-bg-raw'] = colors.surveyBgRaw;
+  }
+
+  return styles as React.CSSProperties;
 }
 
 async function getSurvey(
@@ -71,6 +110,7 @@ export default async function PublicSurveyPage({
     <div
       className="min-h-screen survey-container"
       data-survey-theme={survey.theme}
+      style={survey.theme === "custom" ? getCustomThemeStyles(survey.customTheme) : undefined}
     >
       <div className="container max-w-3xl mx-auto py-12 px-4">
         {isPreview && (

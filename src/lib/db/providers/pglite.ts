@@ -27,7 +27,7 @@ async function createEnumTypes(client: PGlite): Promise<void> {
     EXCEPTION WHEN duplicate_object THEN null; END $$;
   `);
   await client.query(`
-    DO $$ BEGIN CREATE TYPE survey_theme AS ENUM ('light', 'dark', 'minimal');
+    DO $$ BEGIN CREATE TYPE survey_theme AS ENUM ('light', 'dark', 'minimal', 'custom');
     EXCEPTION WHEN duplicate_object THEN null; END $$;
   `);
   await client.query(`
@@ -102,6 +102,7 @@ async function createAppTables(client: PGlite): Promise<void> {
       language survey_language NOT NULL DEFAULT 'ko',
       logo_base64 TEXT,
       sheets_config JSONB,
+      custom_theme JSONB,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )

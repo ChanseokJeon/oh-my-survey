@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses, ensureDbReady } from "@/lib/db";
+import { db, surveys, questions, responses, ensureDbReady, currentProvider } from "@/lib/db";
+import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, asc, count } from "drizzle-orm";
 import { updateSurveySchema } from "@/lib/validations/survey";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
@@ -68,6 +69,57 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateSurveySchema.parse(body);
 
+    // For PGlite, use raw SQL
+    if (currentProvider === 'pglite') {
+      const pglite = getPGliteInstance();
+      if (!pglite) {
+        throw new Error('PGlite instance not available');
+      }
+
+      // Build dynamic update query
+      const updates: string[] = [];
+      const values: unknown[] = [];
+      let paramIndex = 1;
+
+      if (validated.title !== undefined) {
+        updates.push(`title = $${paramIndex++}`);
+        values.push(validated.title);
+      }
+      if (validated.status !== undefined) {
+        updates.push(`status = $${paramIndex++}`);
+        values.push(validated.status);
+      }
+      if (validated.theme !== undefined) {
+        updates.push(`theme = $${paramIndex++}`);
+        values.push(validated.theme);
+      }
+      if (validated.customTheme !== undefined) {
+        updates.push(`custom_theme = $${paramIndex++}`);
+        values.push(validated.customTheme ? JSON.stringify(validated.customTheme) : null);
+      }
+      if (validated.logoBase64 !== undefined) {
+        updates.push(`logo_base64 = $${paramIndex++}`);
+        values.push(validated.logoBase64);
+      }
+      if (validated.sheetsConfig !== undefined) {
+        updates.push(`sheets_config = $${paramIndex++}`);
+        values.push(validated.sheetsConfig ? JSON.stringify(validated.sheetsConfig) : null);
+      }
+
+      updates.push(`updated_at = $${paramIndex++}`);
+      values.push(new Date());
+
+      values.push(surveyId);
+
+      const result = await pglite.query(
+        `UPDATE surveys SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+        values
+      );
+
+      return NextResponse.json(result.rows[0]);
+    }
+
+    // PostgreSQL: use drizzle ORM
     const [updated] = await db
       .update(surveys)
       .set({

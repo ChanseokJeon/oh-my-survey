@@ -13,7 +13,22 @@ import { getLabels, type SurveyLanguage } from "@/lib/i18n/respondent-labels";
 interface SurveyData {
   id: string;
   title: string;
-  theme: "light" | "dark" | "minimal";
+  theme: "light" | "dark" | "minimal" | "custom";
+  customTheme?: {
+    colors: {
+      surveyBg: string;
+      surveyBgRaw?: string;
+      surveyFg: string;
+      surveyPrimary: string;
+      surveyPrimaryFg: string;
+      surveyMuted: string;
+      surveyMutedFg: string;
+      surveyBorder: string;
+      surveyInput: string;
+      surveyCard: string;
+      surveyCardFg: string;
+    };
+  };
   logoBase64: string | null;
   questions: Question[];
   language: SurveyLanguage;

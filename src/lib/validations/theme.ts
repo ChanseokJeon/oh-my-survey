@@ -14,6 +14,7 @@ const hexColorSchema = z.string().regex(
 
 export const themeColorsSchema = z.object({
   surveyBg: hslColorSchema,
+  surveyBgRaw: z.string().optional(), // Raw CSS value (gradient or color) - not validated as HSL
   surveyFg: hslColorSchema,
   surveyPrimary: hslColorSchema,
   surveyPrimaryFg: hslColorSchema,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, ensureDbReady } from "@/lib/db";
+import { db, surveys, questions, ensureDbReady, currentProvider } from "@/lib/db";
+import { getPGliteInstance } from "@/lib/db/providers";
 import { eq, count } from "drizzle-orm";
 import { publishSurveySchema } from "@/lib/validations/survey";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
@@ -31,6 +32,39 @@ export async function POST(
     const body = await request.json();
     const { action } = publishSurveySchema.parse(body);
 
+    const newStatus = action === "publish" ? "published" : action === "close" ? "closed" : "draft";
+
+    // For PGlite, use raw SQL
+    if (currentProvider === 'pglite') {
+      const pglite = getPGliteInstance();
+      if (!pglite) {
+        throw new Error('PGlite instance not available');
+      }
+
+      // Check if survey has questions before publishing
+      if (action === "publish") {
+        const countResult = await pglite.query<{ count: string }>(
+          `SELECT COUNT(*)::text as count FROM questions WHERE survey_id = $1`,
+          [surveyId]
+        );
+        const qCount = parseInt(countResult.rows[0]?.count || '0', 10);
+        if (qCount === 0) {
+          return NextResponse.json(
+            { error: "Cannot publish survey without questions" },
+            { status: 400 }
+          );
+        }
+      }
+
+      const result = await pglite.query(
+        `UPDATE surveys SET status = $1, updated_at = $2 WHERE id = $3 RETURNING *`,
+        [newStatus, new Date(), surveyId]
+      );
+
+      return NextResponse.json(result.rows[0]);
+    }
+
+    // PostgreSQL: use drizzle ORM
     // Check if survey has questions before publishing
     if (action === "publish") {
       const [questionCount] = await db
@@ -45,8 +79,6 @@ export async function POST(
         );
       }
     }
-
-    const newStatus = action === "publish" ? "published" : action === "close" ? "closed" : "draft";
 
     const [updated] = await db
       .update(surveys)

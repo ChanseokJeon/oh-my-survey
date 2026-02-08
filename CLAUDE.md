@@ -20,17 +20,11 @@ Example: "I need to delete the `data/pglite` directory. May I run `rm -rf data/p
 
 ## Testing Guidelines
 
-**CRITICAL: HEADLESS ONLY - NO BROWSER AUTOMATION**
-
 - Use `pnpm test` for unit tests (Vitest)
 - Use `pnpm test:e2e` for E2E tests (Playwright headless)
 - Use `curl` or direct API calls for API testing
-
-**FORBIDDEN:**
-- MCP chrome tools (claude-in-chrome)
-- Opening browser windows
-- Any visual browser automation
-- Screenshot-based testing via browser
+- MCP chrome tools (claude-in-chrome) 사용 가능하나, headed 브라우저 창을 띄우기 전에 반드시 사용자 허락을 받을 것
+- E2E 자동화 테스트는 반드시 Playwright headless로 작성
 
 **Sub-agents MUST follow these rules. No exceptions.**
 

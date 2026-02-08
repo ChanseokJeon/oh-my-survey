@@ -608,6 +608,173 @@ test.describe('Public Survey - Keyboard Navigation', () => {
     // Should still be on Q2
     await expect(page.getByRole('heading', { level: 2 })).toContainText('Tell us about yourself');
   });
+
+  test('should navigate multiple choice options with Arrow keys and select with Space', async ({ page, request }) => {
+    const { slug } = await createAndPublishSurvey(request, page);
+
+    await page.goto(`/s/${slug}`);
+
+    // Navigate to Q3 (multiple choice): Q1 → Q2 → Q3
+    await page.getByRole('textbox').fill('Test');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+
+    // Should be on Q3: multiple choice
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your favorite color?');
+
+    // Verify ARIA attributes on container
+    const radiogroup = page.locator('[role="radiogroup"]');
+    await expect(radiogroup).toBeVisible();
+
+    // Verify radio items exist
+    const radios = page.locator('[role="radio"]');
+    await expect(radios).toHaveCount(4);
+
+    // First item should be focusable (tabIndex=0)
+    await expect(radios.nth(0)).toHaveAttribute('tabindex', '0');
+    await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1');
+
+    // Focus the first radio and navigate down with Arrow keys
+    await radios.nth(0).focus();
+    await page.keyboard.press('ArrowDown');
+
+    // Second item should now be focused
+    await expect(radios.nth(1)).toBeFocused();
+
+    // Press ArrowDown again to go to third
+    await page.keyboard.press('ArrowDown');
+    await expect(radios.nth(2)).toBeFocused();
+
+    // Select with Space (should select "Green" - 3rd option)
+    await page.keyboard.press('Space');
+
+    // Verify selection - Next button should be enabled now
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
+
+    // Verify aria-checked
+    await expect(radios.nth(2)).toHaveAttribute('aria-checked', 'true');
+    await expect(radios.nth(0)).toHaveAttribute('aria-checked', 'false');
+  });
+
+  test('should navigate yes/no options with Arrow keys and select with Space', async ({ page, request }) => {
+    const { slug } = await createAndPublishSurvey(request, page);
+
+    await page.goto(`/s/${slug}`);
+
+    // Navigate to Q4 (yes/no): Q1 → Q2 → Q3 → Q4
+    await page.getByRole('textbox').fill('Test');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    // Q3: select an option to proceed
+    await page.locator('[role="radio"]').nth(0).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+
+    // Should be on Q4: yes/no
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Do you enjoy surveys?');
+
+    const radios = page.locator('[role="radio"]');
+    await expect(radios).toHaveCount(2);
+
+    // Focus first option (Yes) and navigate to No with ArrowRight
+    await radios.nth(0).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(radios.nth(1)).toBeFocused();
+
+    // Select No with Space
+    await page.keyboard.press('Space');
+    await expect(radios.nth(1)).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByRole('button', { name: '다음', exact: true })).toBeEnabled();
+  });
+
+  test('should navigate rating stars with Arrow keys and select with Space', async ({ page, request }) => {
+    const { slug } = await createAndPublishSurvey(request, page);
+
+    await page.goto(`/s/${slug}`);
+
+    // Navigate to Q5 (rating): Q1 → Q2 → Q3 → Q4 → Q5
+    await page.getByRole('textbox').fill('Test');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.locator('[role="radio"]').nth(0).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.locator('[role="radio"]').nth(0).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+
+    // Should be on Q5: rating
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('Rate your experience');
+
+    const radios = page.locator('[role="radio"]');
+    await expect(radios).toHaveCount(5);
+
+    // Navigate to 4th star using ArrowRight 3 times
+    await radios.nth(0).focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(radios.nth(3)).toBeFocused();
+
+    // Select with Space
+    await page.keyboard.press('Space');
+    await expect(radios.nth(3)).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('should wrap around with Arrow keys', async ({ page, request }) => {
+    const { slug } = await createAndPublishSurvey(request, page);
+
+    await page.goto(`/s/${slug}`);
+
+    // Navigate to Q3 (multiple choice with 4 options)
+    await page.getByRole('textbox').fill('Test');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+
+    const radios = page.locator('[role="radio"]');
+
+    // Focus last item and press ArrowDown → should wrap to first
+    await radios.nth(3).click();
+    await radios.nth(3).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(radios.nth(0)).toBeFocused();
+
+    // Press ArrowUp from first → should wrap to last
+    await page.keyboard.press('ArrowUp');
+    await expect(radios.nth(3)).toBeFocused();
+  });
+
+  test('Space should not trigger page navigation', async ({ page, request }) => {
+    const { slug } = await createAndPublishSurvey(request, page);
+
+    await page.goto(`/s/${slug}`);
+
+    // Navigate to Q3
+    await page.getByRole('textbox').fill('Test');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+
+    // Select an option with Space
+    const radios = page.locator('[role="radio"]');
+    await radios.nth(1).focus();
+    await page.keyboard.press('Space');
+
+    // Should still be on Q3, not moved to Q4
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('What is your favorite color?');
+  });
 });
 
 test('Print Public Survey Test Summary', async () => {

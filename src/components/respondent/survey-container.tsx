@@ -116,7 +116,14 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore Space - it's used for selecting options in choice inputs
+      if (e.key === " ") return;
+
       if (e.key === "Enter" && !e.shiftKey) {
+        // Don't trigger navigation if focus is on a text input or textarea
+        const target = e.target as HTMLElement;
+        if (target.tagName === "TEXTAREA") return;
+
         if (isLast) {
           handleSubmit();
         } else {

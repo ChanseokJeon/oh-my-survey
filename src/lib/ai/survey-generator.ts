@@ -49,7 +49,7 @@ export type GeneratedQuestion = z.infer<typeof QuestionSchema>;
 export type GeneratedSurvey = z.infer<typeof GeneratedSurveySchema>;
 
 async function generateWithAnthropic(description: string): Promise<string> {
-  const client = getAnthropicClient();
+  const client = await getAnthropicClient();
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -72,7 +72,7 @@ async function generateWithAnthropic(description: string): Promise<string> {
 }
 
 async function generateWithOpenAI(description: string): Promise<string> {
-  const client = getOpenAIClient();
+  const client = await getOpenAIClient();
 
   const response = await client.chat.completions.create({
     model: "gpt-5.2",

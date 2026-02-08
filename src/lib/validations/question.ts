@@ -34,7 +34,7 @@ export const updateQuestionSchema = z.object({
 });
 
 export const reorderQuestionsSchema = z.object({
-  questionIds: z.array(z.string().uuid()),
+  questionIds: z.array(z.string().uuid()).min(1),
 });
 
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;

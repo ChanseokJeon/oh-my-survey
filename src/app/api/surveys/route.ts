@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, surveys, questions, responses, ensureDbReady, currentProvider } from "@/lib/db";
+import { db, surveys, ensureDbReady, currentProvider } from "@/lib/db";
 import { getPGliteInstance } from "@/lib/db/providers";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { createSurveySchema } from "@/lib/validations/survey";
 import { generateSlug } from "@/lib/utils/slug";
 import { handleApiError } from "@/lib/utils/api-error";
@@ -28,33 +28,14 @@ export async function GET() {
       theme: surveys.theme,
       createdAt: surveys.createdAt,
       updatedAt: surveys.updatedAt,
+      questionCount: sql<number>`(SELECT COUNT(*) FROM questions WHERE questions.survey_id = ${surveys.id})`.as('question_count'),
+      responseCount: sql<number>`(SELECT COUNT(*) FROM responses WHERE responses.survey_id = ${surveys.id})`.as('response_count'),
     })
     .from(surveys)
     .where(eq(surveys.userId, actualUserId))
     .orderBy(desc(surveys.createdAt));
 
-  // Get counts for each survey
-  const surveysWithCounts = await Promise.all(
-    userSurveys.map(async (survey) => {
-      const [questionCount] = await db
-        .select({ count: count() })
-        .from(questions)
-        .where(eq(questions.surveyId, survey.id));
-
-      const [responseCount] = await db
-        .select({ count: count() })
-        .from(responses)
-        .where(eq(responses.surveyId, survey.id));
-
-      return {
-        ...survey,
-        questionCount: questionCount?.count ?? 0,
-        responseCount: responseCount?.count ?? 0,
-      };
-    })
-  );
-
-  return NextResponse.json({ surveys: surveysWithCounts });
+  return NextResponse.json({ surveys: userSurveys });
 }
 
 export async function POST(request: Request) {

@@ -11,7 +11,11 @@ let postgresClient: ReturnType<typeof postgres> | null = null;
 
 export function createPostgresDatabase(connectionString: string) {
   if (!postgresClient) {
-    postgresClient = postgres(connectionString);
+    postgresClient = postgres(connectionString, {
+      max: 5,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
   }
 
   return drizzle(postgresClient, { schema });

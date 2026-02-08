@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, questions, ensureDbReady } from "@/lib/db";
-import { eq, and, inArray, asc } from "drizzle-orm";
+import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { reorderQuestionsSchema } from "@/lib/validations/question";
 import { verifySurveyOwnership } from "@/lib/utils/survey-ownership";
 import { handleApiError } from "@/lib/utils/api-error";
@@ -46,14 +46,19 @@ export async function PATCH(
       );
     }
 
-    // Update order for each question
-    await Promise.all(
-      questionIds.map((id, index) =>
-        db
-          .update(questions)
-          .set({ order: index + 1, updatedAt: new Date() })
-          .where(eq(questions.id, id))
-      )
+    // Update order for all questions in a single batch UPDATE using SQL CASE/WHEN
+    const now = new Date();
+    const caseStatements = sql.join(
+      questionIds.map((id, index) => sql`WHEN id = ${id} THEN ${index + 1}`),
+      sql` `
+    );
+    const idList = sql.join(
+      questionIds.map(id => sql`${id}`),
+      sql`, `
+    );
+
+    await db.execute(
+      sql`UPDATE questions SET "order" = CASE ${caseStatements} END, updated_at = ${now} WHERE id IN (${idList})`
     );
 
     // Return updated questions

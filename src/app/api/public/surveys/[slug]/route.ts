@@ -90,6 +90,10 @@ export async function GET(
         ...q,
         options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : null,
       })),
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   }
 
@@ -154,5 +158,9 @@ export async function GET(
     language: survey.language,
     logoBase64: survey.logoBase64,
     questions: surveyQuestions,
+  }, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+    },
   });
 }

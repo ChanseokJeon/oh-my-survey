@@ -1,6 +1,6 @@
-import { google } from "googleapis";
+export async function getGoogleSheetsClient() {
+  const { google } = await import("googleapis");
 
-export function getGoogleSheetsClient() {
   const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!credentials) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is not set");

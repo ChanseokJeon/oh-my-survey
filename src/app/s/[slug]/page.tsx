@@ -6,6 +6,10 @@ import { eq, and, asc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
+// ISR: cache published surveys for 60s. Preview requests call auth() which
+// triggers dynamic rendering, automatically bypassing this cache.
+export const revalidate = 60;
+
 interface SurveyData {
   id: string;
   title: string;

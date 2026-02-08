@@ -1,6 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
-
 export type AIProvider = "anthropic" | "openai";
 
 export function getConfiguredProvider(): AIProvider | null {
@@ -13,14 +10,14 @@ export function getConfiguredProvider(): AIProvider | null {
   return null;
 }
 
-// Generic client factory to eliminate duplication
-function createClientFactory<T>(
+// Generic async client factory with dynamic imports to reduce cold start time
+function createAsyncClientFactory<T>(
   envKey: string,
   clientName: string,
-  factory: (apiKey: string) => T
-): () => T {
+  factory: (apiKey: string) => Promise<T>
+): () => Promise<T> {
   let client: T | null = null;
-  return () => {
+  return async () => {
     if (!client) {
       const apiKey = process.env[envKey];
       if (!apiKey) {
@@ -29,20 +26,26 @@ function createClientFactory<T>(
           `Please add it to your .env.local file to use ${clientName}.`
         );
       }
-      client = factory(apiKey);
+      client = await factory(apiKey);
     }
     return client;
   };
 }
 
-export const getAnthropicClient = createClientFactory(
+export const getAnthropicClient = createAsyncClientFactory(
   "ANTHROPIC_API_KEY",
   "Anthropic Claude",
-  (apiKey) => new Anthropic({ apiKey })
+  async (apiKey) => {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    return new Anthropic({ apiKey });
+  }
 );
 
-export const getOpenAIClient = createClientFactory(
+export const getOpenAIClient = createAsyncClientFactory(
   "OPENAI_API_KEY",
   "OpenAI",
-  (apiKey) => new OpenAI({ apiKey })
+  async (apiKey) => {
+    const { default: OpenAI } = await import("openai");
+    return new OpenAI({ apiKey });
+  }
 );

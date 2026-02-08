@@ -17,6 +17,10 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
 
+  const version = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0';
+  const sha = process.env.NEXT_PUBLIC_BUILD_SHA || 'local';
+  const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME;
+
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       <div className="flex-1 overflow-auto py-4">
@@ -35,6 +39,14 @@ export function Sidebar() {
             </Link>
           ))}
         </nav>
+      </div>
+      <div className="border-t px-4 py-3">
+        <p
+          className="text-xs text-muted-foreground/60"
+          title={buildTime ? `Built: ${new Date(buildTime).toLocaleString()}` : undefined}
+        >
+          v{version}-{sha}
+        </p>
       </div>
     </div>
   );

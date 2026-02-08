@@ -28,8 +28,8 @@ export async function GET() {
       theme: surveys.theme,
       createdAt: surveys.createdAt,
       updatedAt: surveys.updatedAt,
-      questionCount: sql<number>`(SELECT COUNT(*) FROM questions WHERE questions.survey_id = ${surveys.id})`.as('question_count'),
-      responseCount: sql<number>`(SELECT COUNT(*) FROM responses WHERE responses.survey_id = ${surveys.id})`.as('response_count'),
+      questionCount: sql<number>`(SELECT COUNT(*)::int FROM questions WHERE questions.survey_id = ${surveys.id})`.as('question_count'),
+      responseCount: sql<number>`(SELECT COUNT(*)::int FROM responses WHERE responses.survey_id = ${surveys.id})`.as('response_count'),
     })
     .from(surveys)
     .where(eq(surveys.userId, actualUserId))

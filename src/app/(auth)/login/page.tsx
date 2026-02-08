@@ -57,7 +57,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="test@example.com"
+              placeholder="you@example.com"
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
               required
             />
@@ -71,7 +71,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="test1234"
+              placeholder="••••••••"
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
               required
             />
@@ -127,16 +127,6 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        {/* Test Account Info */}
-        <div className="rounded-lg bg-blue-50 p-4 text-sm">
-          <p className="font-medium text-blue-800">Test Account</p>
-          <p className="mt-1 text-blue-700">
-            Email: <code className="bg-blue-100 px-1 rounded">test@example.com</code>
-          </p>
-          <p className="text-blue-700">
-            Password: <code className="bg-blue-100 px-1 rounded">test1234</code>
-          </p>
-        </div>
       </div>
     </div>
   );

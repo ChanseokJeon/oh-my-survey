@@ -131,6 +131,14 @@ async function createAppTables(client: PGlite): Promise<void> {
       ip_address VARCHAR(45)
     )
   `);
+
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS questions_survey_id_idx ON questions(survey_id);
+  `);
+
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS responses_survey_id_idx ON responses(survey_id);
+  `);
 }
 
 /**

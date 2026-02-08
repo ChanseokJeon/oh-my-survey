@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, integer, jsonb, boolean, pgEnum, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { CustomThemeData } from '@/lib/theme/types';
 
@@ -85,7 +85,9 @@ export const questions = pgTable('questions', {
   order: integer('order').notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
-});
+}, (table) => ({
+  surveyIdIdx: index('questions_survey_id_idx').on(table.surveyId),
+}));
 
 export const responses = pgTable('responses', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -93,7 +95,9 @@ export const responses = pgTable('responses', {
   answersJson: jsonb('answers_json').$type<Record<string, string | string[] | number>>().notNull(),
   completedAt: timestamp('completed_at', { mode: 'date' }).defaultNow().notNull(),
   ipAddress: varchar('ip_address', { length: 45 }),
-});
+}, (table) => ({
+  surveyIdIdx: index('responses_survey_id_idx').on(table.surveyId),
+}));
 
 // ============ RELATIONS ============
 export const usersRelations = relations(users, ({ many }) => ({

@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import { SurveyContainer } from "@/components/respondent/survey-container";
+import { db, surveys, questions, ensureDbReady, currentProvider } from "@/lib/db";
+import { getPGliteInstance } from "@/lib/db/providers";
+import { eq, and, asc } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { getActualUserIdForPGlite } from "@/lib/utils/pglite-user";
 
 interface SurveyData {
   id: string;
@@ -59,28 +63,152 @@ function getCustomThemeStyles(customTheme?: SurveyData['customTheme']): React.CS
 
 async function getSurvey(
   slug: string,
-  isPreview: boolean = false,
-  cookieHeader?: string
+  isPreview: boolean = false
 ): Promise<SurveyData | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  try {
-    const url = new URL(`${baseUrl}/api/public/surveys/${slug}`);
-    if (isPreview) {
-      url.searchParams.set("preview", "true");
+  await ensureDbReady();
+
+  // For PGlite, use raw SQL to avoid drizzle-orm compatibility issues
+  if (currentProvider === 'pglite') {
+    const pglite = getPGliteInstance();
+    if (!pglite) {
+      return null;
     }
-    const headers: HeadersInit = {};
-    if (cookieHeader) {
-      headers["Cookie"] = cookieHeader;
+
+    // Find survey by slug
+    const surveyQuery = isPreview
+      ? `SELECT * FROM surveys WHERE slug = $1 LIMIT 1`
+      : `SELECT * FROM surveys WHERE slug = $1 AND status = 'published' LIMIT 1`;
+    const surveyResult = await pglite.query<{
+      id: string;
+      user_id: string;
+      title: string;
+      theme: string;
+      custom_theme: string | null;
+      language: string;
+      logo_base64: string | null;
+      status: string;
+    }>(surveyQuery, [slug]);
+
+    if (surveyResult.rows.length === 0) {
+      return null;
     }
-    const response = await fetch(url.toString(), {
-      cache: "no-store",
-      headers,
-    });
-    if (!response.ok) return null;
-    return response.json();
-  } catch {
+
+    const surveyRow = surveyResult.rows[0];
+
+    // For preview mode, verify ownership
+    if (isPreview && surveyRow.status === "draft") {
+      const session = await auth();
+      if (!session?.user?.id) {
+        return null;
+      }
+      const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+      if (surveyRow.user_id !== actualUserId) {
+        return null;
+      }
+    }
+
+    // Get questions
+    const questionsResult = await pglite.query<{
+      id: string;
+      type: string;
+      title: string;
+      options: string | null;
+      required: boolean;
+      order: number;
+    }>(
+      `SELECT id, type, title, options, required, "order" FROM questions WHERE survey_id = $1 ORDER BY "order" ASC`,
+      [surveyRow.id]
+    );
+
+    // Parse customTheme if it's a string
+    let customTheme: SurveyData['customTheme'] = undefined;
+    if (surveyRow.custom_theme) {
+      try {
+        customTheme = typeof surveyRow.custom_theme === 'string'
+          ? JSON.parse(surveyRow.custom_theme)
+          : surveyRow.custom_theme;
+      } catch {
+        customTheme = undefined;
+      }
+    }
+
+    return {
+      id: surveyRow.id,
+      title: surveyRow.title,
+      theme: surveyRow.theme as "light" | "dark" | "minimal" | "custom",
+      customTheme,
+      language: surveyRow.language as "en" | "ko",
+      logoBase64: surveyRow.logo_base64,
+      questions: questionsResult.rows.map(q => ({
+        ...q,
+        type: q.type as "short_text" | "long_text" | "multiple_choice" | "yes_no" | "rating",
+        options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : null,
+      })),
+    };
+  }
+
+  // PostgreSQL: use drizzle ORM
+  // Find survey by slug
+  const [survey] = await db
+    .select({
+      id: surveys.id,
+      title: surveys.title,
+      theme: surveys.theme,
+      customTheme: surveys.customTheme,
+      language: surveys.language,
+      logoBase64: surveys.logoBase64,
+      status: surveys.status,
+      userId: surveys.userId,
+    })
+    .from(surveys)
+    .where(
+      isPreview
+        ? eq(surveys.slug, slug)
+        : and(eq(surveys.slug, slug), eq(surveys.status, "published"))
+    );
+
+  if (!survey) {
     return null;
   }
+
+  // For preview mode, verify ownership using server-side session
+  if (isPreview && survey.status === "draft") {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    // Resolve actual user ID for PGlite compatibility
+    const actualUserId = await getActualUserIdForPGlite(session.user.id, session.user.email) || session.user.id;
+
+    if (survey.userId !== actualUserId) {
+      return null;
+    }
+  }
+
+  // Get questions
+  const surveyQuestions = await db
+    .select({
+      id: questions.id,
+      type: questions.type,
+      title: questions.title,
+      options: questions.options,
+      required: questions.required,
+      order: questions.order,
+    })
+    .from(questions)
+    .where(eq(questions.surveyId, survey.id))
+    .orderBy(asc(questions.order));
+
+  return {
+    id: survey.id,
+    title: survey.title,
+    theme: survey.theme,
+    customTheme: survey.customTheme ?? undefined,
+    language: survey.language,
+    logoBase64: survey.logoBase64,
+    questions: surveyQuestions,
+  };
 }
 
 export default async function PublicSurveyPage({
@@ -94,13 +222,7 @@ export default async function PublicSurveyPage({
   const { preview } = await searchParams;
   const isPreview = preview === "true";
 
-  // Get cookies for forwarding to API (needed for preview auth)
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll()
-    .map(c => `${c.name}=${c.value}`)
-    .join("; ");
-
-  const survey = await getSurvey(slug, isPreview, isPreview ? cookieHeader : undefined);
+  const survey = await getSurvey(slug, isPreview);
 
   if (!survey) {
     notFound();

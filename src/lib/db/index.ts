@@ -6,7 +6,7 @@
  *   import { db, surveys, questions } from '@/lib/db';
  *
  * Environment Variables:
- *   DB_PROVIDER: 'pglite' | 'postgres' (default: 'pglite')
+ *   DB_PROVIDER: 'pglite' | 'postgres' (default: 'pglite', blocked in production)
  *   PGLITE_PATH: Path for PGlite data (default: './data/pglite')
  *   DATABASE_URL: PostgreSQL connection string (required for postgres provider)
  */

@@ -103,61 +103,59 @@ async function findOrCreateUserPostgres(email: string) {
   };
 }
 
-// Only add Credentials provider in development mode for testing
-if (process.env.NODE_ENV === 'development') {
-  providers.push(
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
+// Add Credentials provider for testing
+providers.push(
+  Credentials({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth] authorize called with:', credentials?.email);
+      }
+
+      if (!credentials?.email || !credentials?.password) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[Auth] authorize called with:', credentials?.email);
+          console.log('[Auth] Missing credentials');
         }
+        return null;
+      }
 
-        if (!credentials?.email || !credentials?.password) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[Auth] Missing credentials');
-          }
-          return null;
-        }
+      const email = credentials.email as string;
+      const password = credentials.password as string;
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-
-        // Check password against environment variable
-        const testPassword = process.env.TEST_USER_PASSWORD || "test1234";
-        if (password !== testPassword) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[Auth] Invalid password');
-          }
-          return null;
-        }
-
+      // Check password against environment variable
+      const testPassword = process.env.TEST_USER_PASSWORD || "test1234";
+      if (password !== testPassword) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[Auth] Password check passed, currentProvider:', currentProvider);
+          console.log('[Auth] Invalid password');
         }
+        return null;
+      }
 
-        // Ensure database is ready before operations
-        try {
-          await ensureDbReady();
-        } catch (e) {
-          console.error('[Auth] ensureDbReady failed:', e);
-          throw e;
-        }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Auth] Password check passed, currentProvider:', currentProvider);
+      }
 
-        // Route to appropriate helper based on provider
-        if (currentProvider === 'pglite') {
-          return await findOrCreateUserPGlite(email);
-        }
+      // Ensure database is ready before operations
+      try {
+        await ensureDbReady();
+      } catch (e) {
+        console.error('[Auth] ensureDbReady failed:', e);
+        throw e;
+      }
 
-        return await findOrCreateUserPostgres(email);
-      },
-    })
-  );
-}
+      // Route to appropriate helper based on provider
+      if (currentProvider === 'pglite') {
+        return await findOrCreateUserPGlite(email);
+      }
+
+      return await findOrCreateUserPostgres(email);
+    },
+  })
+);
 
 // Build NextAuth config
 const authConfig: NextAuthConfig = {

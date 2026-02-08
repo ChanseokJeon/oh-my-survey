@@ -7,12 +7,14 @@ import { YesNoInput } from "./inputs/yes-no-input";
 import { RatingInput } from "./inputs/rating-input";
 import { Badge } from "@/components/ui/badge";
 import { Question } from "@/types/question";
+import { getLabels, type SurveyLanguage } from "@/lib/i18n/respondent-labels";
 
 interface QuestionViewProps {
   question: Question;
   value: string | number;
   onChange: (value: string | number) => void;
   isAnimating?: boolean;
+  language?: SurveyLanguage;
 }
 
 export function QuestionView({
@@ -20,7 +22,10 @@ export function QuestionView({
   value,
   onChange,
   isAnimating,
+  language = "en",
 }: QuestionViewProps) {
+  const labels = getLabels(language);
+
   const renderInput = () => {
     switch (question.type) {
       case "short_text":
@@ -28,6 +33,7 @@ export function QuestionView({
           <ShortTextInput
             value={value as string}
             onChange={onChange}
+            language={language}
           />
         );
       case "long_text":
@@ -35,6 +41,7 @@ export function QuestionView({
           <LongTextInput
             value={value as string}
             onChange={onChange}
+            language={language}
           />
         );
       case "multiple_choice":
@@ -50,6 +57,7 @@ export function QuestionView({
           <YesNoInput
             value={value as string}
             onChange={onChange}
+            language={language}
           />
         );
       case "rating":
@@ -78,7 +86,7 @@ export function QuestionView({
           )}
         </h2>
         {question.required && (
-          <Badge variant="outline" className="text-xs">Required</Badge>
+          <Badge variant="outline" className="text-xs">{labels.required}</Badge>
         )}
       </div>
       {renderInput()}

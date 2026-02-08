@@ -78,6 +78,23 @@
   /* Gradient support: use --survey-bg-raw if set, otherwise fallback to solid HSL color */
   background: var(--survey-bg-raw, hsl(var(--survey-bg)));
   color: hsl(var(--survey-fg));
+
+  /* Override shadcn/ui CSS variables to respect survey theme */
+  --primary: var(--survey-primary);
+  --primary-foreground: var(--survey-primary-fg);
+  --background: var(--survey-bg);
+  --foreground: var(--survey-fg);
+  --muted: var(--survey-muted);
+  --muted-foreground: var(--survey-muted-fg);
+  --border: var(--survey-border);
+  --input: var(--survey-input);
+  --card: var(--survey-card);
+  --card-foreground: var(--survey-card-fg);
+  --secondary: var(--survey-muted);
+  --secondary-foreground: var(--survey-muted-fg);
+  --accent: var(--survey-muted);
+  --accent-foreground: var(--survey-fg);
+  --ring: var(--survey-primary);
 }
 
 .survey-card {

@@ -135,7 +135,7 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <ProgressBar current={currentIndex + 1} total={survey.questions.length} />
+      <ProgressBar current={currentIndex + 1} total={survey.questions.length} language={survey.language} />
 
       {currentQuestion && (
         <QuestionView
@@ -145,6 +145,7 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
             setAnswers({ ...answers, [currentQuestion.id]: value })
           }
           isAnimating={isAnimating}
+          language={survey.language}
         />
       )}
 

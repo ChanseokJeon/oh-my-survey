@@ -2,13 +2,17 @@
 
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
+import { getLabels, type SurveyLanguage } from "@/lib/i18n/respondent-labels";
 
 interface YesNoInputProps {
   value: string;
   onChange: (value: string) => void;
+  language?: SurveyLanguage;
 }
 
-export function YesNoInput({ value, onChange }: YesNoInputProps) {
+export function YesNoInput({ value, onChange, language = "en" }: YesNoInputProps) {
+  const labels = getLabels(language);
+
   return (
     <div className="flex gap-4">
       <button
@@ -23,7 +27,7 @@ export function YesNoInput({ value, onChange }: YesNoInputProps) {
         )}
       >
         <Check className="w-6 h-6" />
-        Yes
+        {labels.yes}
       </button>
       <button
         type="button"
@@ -37,7 +41,7 @@ export function YesNoInput({ value, onChange }: YesNoInputProps) {
         )}
       >
         <X className="w-6 h-6" />
-        No
+        {labels.no}
       </button>
     </div>
   );

@@ -8,6 +8,16 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem',  // 16px on mobile
+        sm: '2rem',       // 32px on small screens
+        lg: '4rem',       // 64px on large screens
+        xl: '5rem',       // 80px on xl screens
+        '2xl': '6rem',    // 96px on 2xl screens
+      },
+    },
     extend: {
       fontFamily: {
         sans: ["var(--font-pretendard)", "system-ui", "sans-serif"],

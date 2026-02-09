@@ -28,7 +28,7 @@ export function SurveyLayoutHeader({ survey, activeTab }: SurveyLayoutHeaderProp
 
   return (
     <div className="border-b bg-background">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto py-4">
         {/* Back button and breadcrumb */}
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" size="icon" asChild>

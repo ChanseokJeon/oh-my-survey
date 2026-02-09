@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SurveyCard } from "@/components/survey/survey-card";
-import { Plus, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { Plus, Loader2, Sparkles, Trash2, X, CheckSquare, FileQuestion } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AIGeneratorDialog } from "@/components/survey/ai-generator";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <Checkbox className="mr-2 h-4 w-4" />
+                  <CheckSquare className="mr-2 h-4 w-4" />
                   Select
                 </>
               )}
@@ -201,7 +201,7 @@ export default function DashboardPage() {
             <Sparkles className="mr-2 h-4 w-4" />
             Generate with AI
           </Button>
-          <Button asChild>
+          <Button asChild size="lg" className="shadow-sm">
             <Link href="/surveys/new">
               <Plus className="mr-2 h-4 w-4" />
               New Survey
@@ -242,22 +242,32 @@ export default function DashboardPage() {
 
       {surveys.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 border rounded-lg border-dashed">
-          <p className="text-muted-foreground mb-4">No surveys yet</p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setAiDialogOpen(true)}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Generate with AI
-            </Button>
-            <Button asChild>
-              <Link href="/surveys/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Create your first survey
-              </Link>
-            </Button>
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+              <FileQuestion className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Create your first survey</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Get started by creating a new survey from scratch or let AI generate one for you
+              </p>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={() => setAiDialogOpen(true)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate with AI
+              </Button>
+              <Button asChild>
+                <Link href="/surveys/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Survey
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {surveys.map((survey) => (
             <SurveyCard
               key={survey.id}

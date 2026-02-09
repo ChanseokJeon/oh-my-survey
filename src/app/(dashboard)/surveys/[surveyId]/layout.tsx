@@ -46,7 +46,7 @@ export default async function SurveyLayout({ children, params }: SurveyLayoutPro
     <SurveyProvider surveyId={surveyId}>
       <div className="min-h-screen flex flex-col">
         <SurveyLayoutHeaderWrapper survey={survey} />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 container mx-auto py-8">
           {children}
         </main>
       </div>

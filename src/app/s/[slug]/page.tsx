@@ -238,7 +238,7 @@ export default async function PublicSurveyPage({
       data-survey-theme={survey.theme}
       style={survey.theme === "custom" ? getCustomThemeStyles(survey.customTheme) : undefined}
     >
-      <div className="container max-w-3xl mx-auto py-12 px-4">
+      <div className="container max-w-3xl mx-auto py-12">
         {isPreview && (
           <div className="mb-6 p-3 bg-warning/20 border border-warning/40 rounded-md text-center">
             <p className="text-sm font-medium text-warning-foreground">

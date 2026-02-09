@@ -35,7 +35,11 @@ interface SurveyCardProps {
 
 export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }: SurveyCardProps) {
   return (
-    <Card className={cn("flex flex-col relative", selected && "ring-2 ring-primary")}>
+    <Card className={cn(
+      "flex flex-col relative transition-all duration-200",
+      "hover:shadow-md hover:border-primary/50 cursor-pointer",
+      selected && "ring-2 ring-primary"
+    )}>
       {selectable && (
         <div className="absolute top-3 left-3 z-10">
           <Checkbox
@@ -87,7 +91,7 @@ export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }:
       </CardHeader>
       <CardContent className="flex-1">
         <div className="flex items-center gap-2 mb-4">
-          <Badge className={getSurveyStatusColor(survey.status)}>{survey.status}</Badge>
+          <Badge className={cn(getSurveyStatusColor(survey.status), "font-medium")}>{survey.status}</Badge>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>

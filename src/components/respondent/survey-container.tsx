@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Question } from "@/types/question";
 import { getLabels, type SurveyLanguage } from "@/lib/i18n/respondent-labels";
 
+const ANIMATION_DURATION = 150;
+
 interface SurveyData {
   id: string;
   title: string;
@@ -61,23 +63,23 @@ export function SurveyContainer({ survey, slug }: SurveyContainerProps) {
     return true;
   }, [currentQuestion, answers]);
 
-  const handlePrevious = () => {
-    if (isFirst || isAnimating) return;
+  const animateToIndex = (newIndex: number) => {
     setIsAnimating(true);
     setTimeout(() => {
-      setCurrentIndex(currentIndex - 1);
+      setCurrentIndex(newIndex);
       setIsAnimating(false);
-    }, 150);
+    }, ANIMATION_DURATION);
+  };
+
+  const handlePrevious = () => {
+    if (isFirst || isAnimating) return;
+    animateToIndex(currentIndex - 1);
   };
 
   const handleNext = useCallback(() => {
     if (isAnimating || !canProceed()) return;
-    setIsAnimating(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) => prev + 1);
-      setIsAnimating(false);
-    }, 150);
-  }, [isAnimating, canProceed]);
+    animateToIndex(currentIndex + 1);
+  }, [isAnimating, canProceed, currentIndex]);
 
   const handleSubmit = useCallback(async () => {
     if (!canProceed() || isSubmitting) return;

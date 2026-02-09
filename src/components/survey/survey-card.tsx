@@ -51,7 +51,7 @@ export function SurveyCard({ survey, onDelete, selectable, selected, onSelect }:
         </CardTitle>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0" aria-label="설문 메뉴">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

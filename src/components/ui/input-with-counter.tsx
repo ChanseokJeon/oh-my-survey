@@ -25,8 +25,8 @@ const InputWithCounter = React.forwardRef<HTMLInputElement, InputWithCounterProp
     }
 
     const getCounterColor = () => {
-      if (length >= maxLength) return "text-red-600"
-      if (length >= maxLength * warnAt) return "text-yellow-600"
+      if (length >= maxLength) return "text-destructive"
+      if (length >= maxLength * warnAt) return "text-warning"
       return "text-muted-foreground"
     }
 
@@ -77,8 +77,8 @@ const TextareaWithCounter = React.forwardRef<HTMLTextAreaElement, TextareaWithCo
     }
 
     const getCounterColor = () => {
-      if (length >= maxLength) return "text-red-600"
-      if (length >= maxLength * warnAt) return "text-yellow-600"
+      if (length >= maxLength) return "text-destructive"
+      if (length >= maxLength * warnAt) return "text-warning"
       return "text-muted-foreground"
     }
 

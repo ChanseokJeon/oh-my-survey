@@ -21,6 +21,7 @@ export function LongTextInput({ value, onChange, placeholder, language = "en" }:
       maxLength={2000}
       rows={5}
       className="survey-input text-lg resize-none"
+      aria-label={placeholder || labels.placeholderLong}
     />
   );
 }

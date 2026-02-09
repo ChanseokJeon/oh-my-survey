@@ -38,12 +38,12 @@ export function YesNoInput({ value, onChange, language = "en" }: YesNoInputProps
         onClick={() => onChange("yes")}
         className={cn(
           "flex-1 flex items-center justify-center gap-3 p-6 rounded-lg border text-lg font-medium transition-all",
-          "hover:border-green-500 hover:bg-green-50",
-          "focus:outline-none focus:ring-2 focus:ring-green-400/50",
+          "hover:border-success hover:bg-success/10",
+          "focus:outline-none focus:ring-2 focus:ring-success/50",
           value === "yes"
-            ? "border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200"
+            ? "border-success bg-success/10 text-success ring-2 ring-success/30"
             : "survey-card",
-          focusedIndex === 0 && value !== "yes" && "border-green-400/50"
+          focusedIndex === 0 && value !== "yes" && "border-success/50"
         )}
       >
         <Check className="w-6 h-6" />
@@ -59,12 +59,12 @@ export function YesNoInput({ value, onChange, language = "en" }: YesNoInputProps
         onClick={() => onChange("no")}
         className={cn(
           "flex-1 flex items-center justify-center gap-3 p-6 rounded-lg border text-lg font-medium transition-all",
-          "hover:border-red-500 hover:bg-red-50",
-          "focus:outline-none focus:ring-2 focus:ring-red-400/50",
+          "hover:border-destructive hover:bg-destructive/10",
+          "focus:outline-none focus:ring-2 focus:ring-destructive/50",
           value === "no"
-            ? "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200"
+            ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
             : "survey-card",
-          focusedIndex === 1 && value !== "no" && "border-red-400/50"
+          focusedIndex === 1 && value !== "no" && "border-destructive/50"
         )}
       >
         <X className="w-6 h-6" />

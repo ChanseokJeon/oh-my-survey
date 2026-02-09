@@ -20,6 +20,7 @@ export function ShortTextInput({ value, onChange, placeholder, language = "en" }
       placeholder={placeholder || labels.placeholder}
       maxLength={255}
       className="survey-input text-lg py-6"
+      aria-label={placeholder || labels.placeholder}
     />
   );
 }

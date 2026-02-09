@@ -40,22 +40,18 @@ export function ThemeExtractorDialog({
   const { toast } = useToast();
   const extractMutation = useExtractTheme();
 
+  const showError = (title: string, description?: string) => {
+    toast({ title, description, variant: "destructive" });
+  };
+
   const handleFileSelect = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (JPEG, PNG, GIF, WebP)",
-        variant: "destructive",
-      });
+      showError("Invalid file type", "Please upload an image file (JPEG, PNG, GIF, WebP)");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Image must be less than 5MB",
-        variant: "destructive",
-      });
+      showError("File too large", "Image must be less than 5MB");
       return;
     }
 
@@ -70,11 +66,7 @@ export function ThemeExtractorDialog({
         });
         setExtractedTheme(result.suggestedTheme);
       } catch (error) {
-        toast({
-          title: "Extraction failed",
-          description: error instanceof Error ? error.message : "Failed to extract colors",
-          variant: "destructive",
-        });
+        showError("Extraction failed", error instanceof Error ? error.message : "Failed to extract colors");
       }
     };
     reader.readAsDataURL(file);
@@ -82,11 +74,7 @@ export function ThemeExtractorDialog({
 
   const handleUrlSubmit = async () => {
     if (!imageUrl.trim()) {
-      toast({
-        title: "URL required",
-        description: "Please enter an image URL",
-        variant: "destructive",
-      });
+      showError("URL required", "Please enter an image URL");
       return;
     }
 
@@ -98,11 +86,7 @@ export function ThemeExtractorDialog({
       });
       setExtractedTheme(result.suggestedTheme);
     } catch (error) {
-      toast({
-        title: "Extraction failed",
-        description: error instanceof Error ? error.message : "Failed to extract colors",
-        variant: "destructive",
-      });
+      showError("Extraction failed", error instanceof Error ? error.message : "Failed to extract colors");
     }
   };
 

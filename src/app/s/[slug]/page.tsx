@@ -240,8 +240,8 @@ export default async function PublicSurveyPage({
     >
       <div className="container max-w-3xl mx-auto py-12 px-4">
         {isPreview && (
-          <div className="mb-6 p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-md text-center">
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+          <div className="mb-6 p-3 bg-warning/20 border border-warning/40 rounded-md text-center">
+            <p className="text-sm font-medium text-warning-foreground">
               Preview Mode - This is a draft survey
             </p>
           </div>

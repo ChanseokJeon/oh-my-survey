@@ -39,17 +39,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-muted">
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-background p-8 shadow-lg">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Welcome to Oh My Survey</h1>
-          <p className="mt-2 text-gray-600">Sign in to create and manage surveys</p>
+          <p className="mt-2 text-muted-foreground">Sign in to create and manage surveys</p>
         </div>
 
         {/* Email Login Form */}
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground">
               Email
             </label>
             <input
@@ -58,12 +58,12 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              className="mt-1 w-full rounded-lg border border-input px-4 py-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground">
               Password
             </label>
             <input
@@ -72,19 +72,19 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              className="mt-1 w-full rounded-lg border border-input px-4 py-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               required
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-black px-4 py-3 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full rounded-lg bg-primary px-4 py-3 text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in with Email"}
           </button>
@@ -93,10 +93,10 @@ export default function LoginPage() {
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
+            <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-4 text-gray-500">Or continue with</span>
+            <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

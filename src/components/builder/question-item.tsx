@@ -44,6 +44,7 @@ export function QuestionItem({ question, onEdit, onDelete }: QuestionItemProps) 
     >
       <button
         className="cursor-grab touch-none"
+        aria-label="질문 순서 변경"
         {...attributes}
         {...listeners}
       >
@@ -69,13 +70,14 @@ export function QuestionItem({ question, onEdit, onDelete }: QuestionItemProps) 
       </div>
 
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => onEdit(question)}>
+        <Button variant="ghost" size="icon" onClick={() => onEdit(question)} aria-label="질문 편집">
           <Pencil className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(question.id)}
+          aria-label="질문 삭제"
         >
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>

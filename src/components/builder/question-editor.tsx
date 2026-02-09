@@ -38,6 +38,14 @@ export function QuestionEditor({
   const [isDirty, setIsDirty] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
 
+  const createChangeHandler = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
+    setter(value);
+    setIsDirty(true);
+  };
+
+  const handleTitleChange = createChangeHandler(setTitle);
+  const handleRequiredChange = createChangeHandler(setRequired);
+
   useEffect(() => {
     if (question) {
       setTitle(question.title);
@@ -46,16 +54,6 @@ export function QuestionEditor({
       setIsDirty(false);
     }
   }, [question]);
-
-  const handleTitleChange = (value: string) => {
-    setTitle(value);
-    setIsDirty(true);
-  };
-
-  const handleRequiredChange = (value: boolean) => {
-    setRequired(value);
-    setIsDirty(true);
-  };
 
   const handleSave = () => {
     if (!title.trim()) return;

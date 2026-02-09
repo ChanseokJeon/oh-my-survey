@@ -49,7 +49,7 @@ export function RatingInput({ value, onChange }: RatingInputProps) {
               className={cn(
                 "w-10 h-10 transition-colors",
                 (hoverValue || value) >= rating
-                  ? "fill-yellow-400 text-yellow-400"
+                  ? "fill-warning text-warning"
                   : "text-muted-foreground"
               )}
             />
